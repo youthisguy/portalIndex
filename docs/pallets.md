@@ -1,0 +1,702 @@
+# Portaldot metadata dump
+- Chain: Westend Asset Hub
+- Endpoint: wss://westend-asset-hub-rpc.polkadot.io
+- Tokens: WND | Decimals: 12 | SS58: 42
+- Spec version: 1025002
+
+## Pallets (69)
+- [0] System
+- [1] ParachainSystem
+- [3] Timestamp
+- [4] ParachainInfo
+- [5] WeightReclaim
+- [6] MultiBlockMigrations
+- [7] Preimage
+- [8] Scheduler
+- [9] Sudo
+- [10] Balances
+- [11] TransactionPayment
+- [13] AssetTxPayment
+- [14] Vesting
+- [15] PgasAllowance
+- [20] Authorship
+- [21] CollatorSelection
+- [22] Session
+- [23] Aura
+- [24] AuraExt
+- [30] XcmpQueue
+- [31] PolkadotXcm
+- [32] CumulusXcm
+- [34] ToRococoXcmRouter
+- [35] MessageQueue
+- [36] SnowbridgeSystemFrontend
+- [40] Utility
+- [41] Multisig
+- [42] Proxy
+- [43] Indices
+- [44] MetaTx
+- [45] VerifySignature
+- [47] Recovery
+- [50] Assets
+- [51] Uniques
+- [52] Nfts
+- [53] ForeignAssets
+- [54] NftFractionalization
+- [55] PoolAssets
+- [56] AssetConversion
+- [57] AssetsFreezer
+- [58] ForeignAssetsFreezer
+- [59] PoolAssetsFreezer
+- [60] Revive
+- [66] AssetsHolder
+- [61] AssetRewards
+- [62] AssetsPrecompiles
+- [63] AssetsPrecompilesPermit
+- [64] VestingPrecompiles
+- [65] Psm
+- [70] StateTrieMigration
+- [80] Staking
+- [81] NominationPools
+- [83] VoterList
+- [84] DelegatedStaking
+- [89] StakingRcClient
+- [85] MultiBlockElection
+- [86] MultiBlockElectionVerifier
+- [87] MultiBlockElectionUnsigned
+- [88] MultiBlockElectionSigned
+- [90] ConvictionVoting
+- [91] Referenda
+- [92] Origins
+- [93] Whitelist
+- [94] Treasury
+- [95] AssetRate
+- [96] MultiAssetBounties
+- [100] Dap
+- [200] AssetConversionMigration
+- [254] AhOps
+
+## Presence check
+- assets: YES (Assets)
+- uniques: YES (Uniques)
+- nfts: YES (Nfts)
+- revive: YES (Revive)
+- balances: YES (Balances)
+
+## Events
+### ahOps (5 events)
+- LeaseUnreserveRemaining
+- CrowdloanUnreserveRemaining
+- SovereignMigrated
+- HoldPlaced
+- HoldReleased
+### assetConversion (7 events)
+- PoolCreated
+- PoolFeeSet
+- LiquidityAdded
+- LiquidityRemoved
+- SwapExecuted
+- SwapCreditExecuted
+- Touched
+### assetConversionMigration (1 events)
+- MigratedToNewAccount
+### assetRate (3 events)
+- AssetRateCreated
+- AssetRateRemoved
+- AssetRateUpdated
+### assetRewards (8 events)
+- Staked
+- Unstaked
+- RewardsHarvested
+- PoolCreated
+- PoolRewardRateModified
+- PoolAdminModified
+- PoolExpiryBlockModified
+- PoolCleanedUp
+### assetTxPayment (2 events)
+- AssetTxFeePaid
+- AssetRefundFailed
+### assets (32 events)
+- Created(asset_id: T::AssetId, creator: T::AccountId, owner: T::AccountId)
+- Issued(asset_id: T::AssetId, owner: T::AccountId, amount: T::Balance)
+- Transferred(asset_id: T::AssetId, from: T::AccountId, to: T::AccountId, amount: T::Balance)
+- Burned(asset_id: T::AssetId, owner: T::AccountId, balance: T::Balance)
+- TeamChanged(asset_id: T::AssetId, issuer: T::AccountId, admin: T::AccountId, freezer: T::AccountId)
+- OwnerChanged(asset_id: T::AssetId, owner: T::AccountId)
+- Frozen(asset_id: T::AssetId, who: T::AccountId)
+- Thawed(asset_id: T::AssetId, who: T::AccountId)
+- AssetFrozen(asset_id: T::AssetId)
+- AssetThawed(asset_id: T::AssetId)
+- AccountsDestroyed(asset_id: T::AssetId, accounts_destroyed: u32, accounts_remaining: u32)
+- ApprovalsDestroyed(asset_id: T::AssetId, approvals_destroyed: u32, approvals_remaining: u32)
+- DestructionStarted(asset_id: T::AssetId)
+- Destroyed(asset_id: T::AssetId)
+- ForceCreated(asset_id: T::AssetId, owner: T::AccountId)
+- MetadataSet(asset_id: T::AssetId, name: Vec<u8>, symbol: Vec<u8>, decimals: u8, is_frozen: bool)
+- MetadataCleared(asset_id: T::AssetId)
+- ApprovedTransfer(asset_id: T::AssetId, source: T::AccountId, delegate: T::AccountId, amount: T::Balance)
+- ApprovalCancelled(asset_id: T::AssetId, owner: T::AccountId, delegate: T::AccountId)
+- TransferredApproved(asset_id: T::AssetId, owner: T::AccountId, delegate: T::AccountId, destination: T::AccountId, amount: T::Balance)
+- AssetStatusChanged(asset_id: T::AssetId)
+- AssetMinBalanceChanged(asset_id: T::AssetId, new_min_balance: T::Balance)
+- Touched(asset_id: T::AssetId, who: T::AccountId, depositor: T::AccountId)
+- Blocked(asset_id: T::AssetId, who: T::AccountId)
+- Deposited(asset_id: T::AssetId, who: T::AccountId, amount: T::Balance)
+- Withdrawn(asset_id: T::AssetId, who: T::AccountId, amount: T::Balance)
+- ReservesUpdated(asset_id: T::AssetId, reserves: Vec<T::ReserveData>)
+- ReservesRemoved(asset_id: T::AssetId)
+- IssuedCredit(asset_id: T::AssetId, amount: T::Balance)
+- BurnedCredit(asset_id: T::AssetId, amount: T::Balance)
+- IssuedDebt(asset_id: T::AssetId, amount: T::Balance)
+- BurnedDebt(asset_id: T::AssetId, amount: T::Balance)
+### assetsFreezer (2 events)
+- Frozen
+- Thawed
+### assetsHolder (3 events)
+- Held
+- Released
+- Burned
+### balances (30 events)
+- Endowed(account: T::AccountId, free_balance: T::Balance)
+- DustLost(account: T::AccountId, amount: T::Balance)
+- Transfer(from: T::AccountId, to: T::AccountId, amount: T::Balance)
+- BalanceSet(who: T::AccountId, free: T::Balance)
+- Reserved(who: T::AccountId, amount: T::Balance)
+- Unreserved(who: T::AccountId, amount: T::Balance)
+- ReserveRepatriated(from: T::AccountId, to: T::AccountId, amount: T::Balance, destination_status: Status)
+- Deposit(who: T::AccountId, amount: T::Balance)
+- Withdraw(who: T::AccountId, amount: T::Balance)
+- Slashed(who: T::AccountId, amount: T::Balance)
+- Minted(who: T::AccountId, amount: T::Balance)
+- MintedCredit(amount: T::Balance)
+- Burned(who: T::AccountId, amount: T::Balance)
+- BurnedDebt(amount: T::Balance)
+- Suspended(who: T::AccountId, amount: T::Balance)
+- Restored(who: T::AccountId, amount: T::Balance)
+- Upgraded(who: T::AccountId)
+- Issued(amount: T::Balance)
+- Rescinded(amount: T::Balance)
+- Locked(who: T::AccountId, amount: T::Balance)
+- Unlocked(who: T::AccountId, amount: T::Balance)
+- Frozen(who: T::AccountId, amount: T::Balance)
+- Thawed(who: T::AccountId, amount: T::Balance)
+- TotalIssuanceForced(old: T::Balance, new: T::Balance)
+- Held(reason: T::RuntimeHoldReason, who: T::AccountId, amount: T::Balance)
+- BurnedHeld(reason: T::RuntimeHoldReason, who: T::AccountId, amount: T::Balance)
+- TransferOnHold(reason: T::RuntimeHoldReason, source: T::AccountId, dest: T::AccountId, amount: T::Balance)
+- TransferAndHold(reason: T::RuntimeHoldReason, source: T::AccountId, dest: T::AccountId, transferred: T::Balance)
+- Released(reason: T::RuntimeHoldReason, who: T::AccountId, amount: T::Balance)
+- Unexpected(: UnexpectedKind)
+### collatorSelection (10 events)
+- NewInvulnerables
+- InvulnerableAdded
+- InvulnerableRemoved
+- NewDesiredCandidates
+- NewCandidacyBond
+- CandidateAdded
+- CandidateBondUpdated
+- CandidateRemoved
+- CandidateReplaced
+- InvalidInvulnerableSkipped
+### convictionVoting (5 events)
+- Delegated
+- Undelegated
+- Voted
+- VoteRemoved
+- VoteUnlocked
+### cumulusXcm (3 events)
+- InvalidFormat
+- UnsupportedVersion
+- ExecutedDownward
+### dap (4 events)
+- IssuanceMinted
+- BudgetAllocationUpdated
+- StagingDrained
+- Unexpected
+### delegatedStaking (4 events)
+- Delegated
+- Released
+- Slashed
+- MigratedDelegation
+### foreignAssets (32 events)
+- Created
+- Issued
+- Transferred
+- Burned
+- TeamChanged
+- OwnerChanged
+- Frozen
+- Thawed
+- AssetFrozen
+- AssetThawed
+- AccountsDestroyed
+- ApprovalsDestroyed
+- DestructionStarted
+- Destroyed
+- ForceCreated
+- MetadataSet
+- MetadataCleared
+- ApprovedTransfer
+- ApprovalCancelled
+- TransferredApproved
+- AssetStatusChanged
+- AssetMinBalanceChanged
+- Touched
+- Blocked
+- Deposited
+- Withdrawn
+- ReservesUpdated
+- ReservesRemoved
+- IssuedCredit
+- BurnedCredit
+- IssuedDebt
+- BurnedDebt
+### foreignAssetsFreezer (2 events)
+- Frozen
+- Thawed
+### indices (4 events)
+- IndexAssigned
+- IndexFreed
+- IndexFrozen
+- DepositPoked
+### messageQueue (4 events)
+- ProcessingFailed
+- Processed
+- OverweightEnqueued
+- PageReaped
+### metaTx (1 events)
+- Dispatched
+### multiAssetBounties (13 events)
+- BountyCreated
+- ChildBountyCreated
+- BountyBecameActive
+- BountyAwarded
+- BountyPayoutProcessed
+- BountyFundingProcessed
+- BountyRefundProcessed
+- BountyCanceled
+- CuratorUnassigned
+- CuratorProposed
+- PaymentFailed
+- Paid
+- BountyValueIncreased
+### multiBlockElection (5 events)
+- PhaseTransitioned
+- UnexpectedTargetSnapshotFailed
+- UnexpectedVoterSnapshotFailed
+- UnexpectedPhaseTransitionOutOfWeight
+- UnexpectedPhaseTransitionHalt
+### multiBlockElectionSigned (10 events)
+- Registered
+- Stored
+- Rewarded
+- RewardPaymentDeferred
+- UnpaidRewardEvicted
+- FeeRefundFailed
+- Slashed
+- Ejected
+- Discarded
+- Bailed
+### multiBlockElectionVerifier (3 events)
+- VerificationFailed
+- Verified
+- Queued
+### multiBlockMigrations (8 events)
+- UpgradeStarted
+- UpgradeCompleted
+- UpgradeFailed
+- MigrationSkipped
+- MigrationAdvanced
+- MigrationCompleted
+- MigrationFailed
+- HistoricCleared
+### multisig (5 events)
+- NewMultisig
+- MultisigApproval
+- MultisigExecuted
+- MultisigCancelled
+- DepositPoked
+### nftFractionalization (2 events)
+- NftFractionalized
+- NftUnified
+### nfts (38 events)
+- Created(collection: T::CollectionId, creator: T::AccountId, owner: T::AccountId)
+- ForceCreated(collection: T::CollectionId, owner: T::AccountId)
+- Destroyed(collection: T::CollectionId)
+- Issued(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId)
+- Transferred(collection: T::CollectionId, item: T::ItemId, from: T::AccountId, to: T::AccountId)
+- Burned(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId)
+- ItemTransferLocked(collection: T::CollectionId, item: T::ItemId)
+- ItemTransferUnlocked(collection: T::CollectionId, item: T::ItemId)
+- ItemPropertiesLocked(collection: T::CollectionId, item: T::ItemId, lock_metadata: bool, lock_attributes: bool)
+- CollectionLocked(collection: T::CollectionId)
+- OwnerChanged(collection: T::CollectionId, new_owner: T::AccountId)
+- TeamChanged(collection: T::CollectionId, issuer: Option<T::AccountId>, admin: Option<T::AccountId>, freezer: Option<T::AccountId>)
+- TransferApproved(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId, delegate: T::AccountId, deadline: Option<BlockNumberFor<T, I>>)
+- ApprovalCancelled(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId, delegate: T::AccountId)
+- AllApprovalsCancelled(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId)
+- CollectionConfigChanged(collection: T::CollectionId)
+- CollectionMetadataSet(collection: T::CollectionId, data: BoundedVec<u8, T::StringLimit>)
+- CollectionMetadataCleared(collection: T::CollectionId)
+- ItemMetadataSet(collection: T::CollectionId, item: T::ItemId, data: BoundedVec<u8, T::StringLimit>)
+- ItemMetadataCleared(collection: T::CollectionId, item: T::ItemId)
+- Redeposited(collection: T::CollectionId, successful_items: Vec<T::ItemId>)
+- AttributeSet(collection: T::CollectionId, maybe_item: Option<T::ItemId>, key: BoundedVec<u8, T::KeyLimit>, value: BoundedVec<u8, T::ValueLimit>, namespace: AttributeNamespace<T::AccountId>)
+- AttributeCleared(collection: T::CollectionId, maybe_item: Option<T::ItemId>, key: BoundedVec<u8, T::KeyLimit>, namespace: AttributeNamespace<T::AccountId>)
+- ItemAttributesApprovalAdded(collection: T::CollectionId, item: T::ItemId, delegate: T::AccountId)
+- ItemAttributesApprovalRemoved(collection: T::CollectionId, item: T::ItemId, delegate: T::AccountId)
+- OwnershipAcceptanceChanged(who: T::AccountId, maybe_collection: Option<T::CollectionId>)
+- CollectionMaxSupplySet(collection: T::CollectionId, max_supply: u32)
+- CollectionMintSettingsUpdated(collection: T::CollectionId)
+- NextCollectionIdIncremented(next_id: Option<T::CollectionId>)
+- ItemPriceSet(collection: T::CollectionId, item: T::ItemId, price: ItemPrice<T, I>, whitelisted_buyer: Option<T::AccountId>)
+- ItemPriceRemoved(collection: T::CollectionId, item: T::ItemId)
+- ItemBought(collection: T::CollectionId, item: T::ItemId, price: ItemPrice<T, I>, seller: T::AccountId, buyer: T::AccountId)
+- TipSent(collection: T::CollectionId, item: T::ItemId, sender: T::AccountId, receiver: T::AccountId, amount: DepositBalanceOf<T, I>)
+- SwapCreated(offered_collection: T::CollectionId, offered_item: T::ItemId, desired_collection: T::CollectionId, desired_item: Option<T::ItemId>, price: Option<PriceWithDirection<ItemPrice<T, I>>>, deadline: BlockNumberFor<T, I>)
+- SwapCancelled(offered_collection: T::CollectionId, offered_item: T::ItemId, desired_collection: T::CollectionId, desired_item: Option<T::ItemId>, price: Option<PriceWithDirection<ItemPrice<T, I>>>, deadline: BlockNumberFor<T, I>)
+- SwapClaimed(sent_collection: T::CollectionId, sent_item: T::ItemId, sent_item_owner: T::AccountId, received_collection: T::CollectionId, received_item: T::ItemId, received_item_owner: T::AccountId, price: Option<PriceWithDirection<ItemPrice<T, I>>>, deadline: BlockNumberFor<T, I>)
+- PreSignedAttributesSet(collection: T::CollectionId, item: T::ItemId, namespace: AttributeNamespace<T::AccountId>)
+- PalletAttributeSet(collection: T::CollectionId, item: Option<T::ItemId>, attribute: PalletAttributes<T::CollectionId>, value: BoundedVec<u8, T::ValueLimit>)
+### nominationPools (23 events)
+- Created
+- Bonded
+- PaidOut
+- Unbonded
+- Withdrawn
+- Destroyed
+- StateChanged
+- MemberRemoved
+- RolesUpdated
+- PoolSlashed
+- UnbondingPoolSlashed
+- PoolCommissionUpdated
+- PoolMaxCommissionUpdated
+- PoolCommissionChangeRateUpdated
+- PoolCommissionClaimPermissionUpdated
+- PoolCommissionClaimed
+- MinBalanceDeficitAdjusted
+- MinBalanceExcessAdjusted
+- MemberClaimPermissionUpdated
+- MetadataUpdated
+- PoolNominationMade
+- PoolNominatorChilled
+- GlobalParamsUpdated
+### parachainSystem (6 events)
+- ValidationFunctionStored
+- ValidationFunctionApplied
+- ValidationFunctionDiscarded
+- DownwardMessagesReceived
+- DownwardMessagesProcessed
+- UpwardMessageSent
+### pgasAllowance (1 events)
+- PGASFeePaid
+### polkadotXcm (29 events)
+- Attempted
+- Sent
+- SendFailed
+- ProcessXcmError
+- UnexpectedResponse
+- ResponseReady
+- Notified
+- NotifyOverweight
+- NotifyDispatchError
+- NotifyDecodeFailed
+- InvalidResponder
+- InvalidResponderVersion
+- ResponseTaken
+- AssetsTrapped
+- VersionChangeNotified
+- SupportedVersionChanged
+- NotifyTargetSendFail
+- NotifyTargetMigrationFail
+- InvalidQuerierVersion
+- InvalidQuerier
+- VersionNotifyStarted
+- VersionNotifyRequested
+- VersionNotifyUnrequested
+- FeesPaid
+- AssetsClaimed
+- VersionMigrationFinished
+- AliasAuthorized
+- AliasAuthorizationRemoved
+- AliasesAuthorizationsRemoved
+### poolAssets (32 events)
+- Created
+- Issued
+- Transferred
+- Burned
+- TeamChanged
+- OwnerChanged
+- Frozen
+- Thawed
+- AssetFrozen
+- AssetThawed
+- AccountsDestroyed
+- ApprovalsDestroyed
+- DestructionStarted
+- Destroyed
+- ForceCreated
+- MetadataSet
+- MetadataCleared
+- ApprovedTransfer
+- ApprovalCancelled
+- TransferredApproved
+- AssetStatusChanged
+- AssetMinBalanceChanged
+- Touched
+- Blocked
+- Deposited
+- Withdrawn
+- ReservesUpdated
+- ReservesRemoved
+- IssuedCredit
+- BurnedCredit
+- IssuedDebt
+- BurnedDebt
+### poolAssetsFreezer (2 events)
+- Frozen
+- Thawed
+### preimage (3 events)
+- Noted
+- Requested
+- Cleared
+### proxy (7 events)
+- ProxyExecuted
+- PureCreated
+- PureKilled
+- Announced
+- ProxyAdded
+- ProxyRemoved
+- DepositPoked
+### psm (13 events)
+- Minted
+- Redeemed
+- MintingFeeUpdated
+- RedemptionFeeUpdated
+- MaxDebtUpdated
+- AssetCeilingWeightUpdated
+- AssetStatusUpdated
+- ExternalAssetAdded
+- ExternalAssetRemoved
+- PsmCreated
+- PsmRemoved
+- FullAdminChanged
+- EmergencyAdminChanged
+### recovery (9 events)
+- AttemptApproved
+- AttemptCanceled
+- AttemptInitiated
+- AttemptFinished
+- AttemptDiscarded
+- AttemptSlashed
+- FriendGroupsChanged
+- InheritorRevoked
+- RecoveredAccountControlled
+### referenda (16 events)
+- Submitted
+- DecisionDepositPlaced
+- DecisionDepositRefunded
+- DepositSlashed
+- DecisionStarted
+- ConfirmStarted
+- ConfirmAborted
+- Confirmed
+- Approved
+- Rejected
+- TimedOut
+- Cancelled
+- Killed
+- SubmissionDepositRefunded
+- MetadataSet
+- MetadataCleared
+### revive (3 events)
+- ContractEmitted(contract: H160, data: Vec<u8>, topics: Vec<H256>)
+- Instantiated(deployer: H160, contract: H160)
+- EthExtrinsicRevert(dispatch_error: DispatchError)
+### scheduler (10 events)
+- Scheduled
+- Canceled
+- Dispatched
+- RetrySet
+- RetryCancelled
+- CallUnavailable
+- PeriodicFailed
+- RetryFailed
+- PermanentlyOverweight
+- AgendaIncomplete
+### session (4 events)
+- NewSession
+- NewQueued
+- ValidatorDisabled
+- ValidatorReenabled
+### snowbridgeSystemFrontend (2 events)
+- MessageSent
+- ExportOperatingModeChanged
+### staking (27 events)
+- EraPaid
+- Rewarded
+- Slashed
+- OldSlashingReportDiscarded
+- Bonded
+- Unbonded
+- Withdrawn
+- StakerRemoved
+- Kicked
+- Chilled
+- PayoutStarted
+- ValidatorPrefsSet
+- SnapshotVotersSizeExceeded
+- SnapshotTargetsSizeExceeded
+- ForceEra
+- ControllerBatchDeprecated
+- CurrencyMigrated
+- PagedElectionProceeded
+- OffenceReported
+- SlashComputed
+- SlashCancelled
+- SessionRotated
+- Unexpected
+- OffenceTooOld
+- EraPruned
+- ValidatorIncentivePaid
+- ValidatorIncentiveConfigSet
+### stakingRcClient (4 events)
+- SessionReportReceived
+- OffenceReceived
+- FeesPaid
+- Unexpected
+### stateTrieMigration (4 events)
+- Migrated
+- Slashed
+- AutoMigrationFinished
+- Halted
+### sudo (4 events)
+- Sudid
+- KeyChanged
+- KeyRemoved
+- SudoAsDone
+### system (8 events)
+- ExtrinsicSuccess
+- ExtrinsicFailed
+- CodeUpdated
+- NewAccount
+- KilledAccount
+- Remarked
+- UpgradeAuthorized
+- RejectedInvalidAuthorizedUpgrade
+### toRococoXcmRouter (2 events)
+- DeliveryFeeFactorDecreased
+- DeliveryFeeFactorIncreased
+### transactionPayment (1 events)
+- TransactionFeePaid
+### treasury (12 events)
+- Spending
+- Awarded
+- Burnt
+- Rollover
+- Deposit
+- SpendApproved
+- UpdatedInactive
+- AssetSpendApproved
+- AssetSpendVoided
+- Paid
+- PaymentFailed
+- SpendProcessed
+### uniques (27 events)
+- Created(collection: T::CollectionId, creator: T::AccountId, owner: T::AccountId)
+- ForceCreated(collection: T::CollectionId, owner: T::AccountId)
+- Destroyed(collection: T::CollectionId)
+- Issued(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId)
+- Transferred(collection: T::CollectionId, item: T::ItemId, from: T::AccountId, to: T::AccountId)
+- Burned(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId)
+- Frozen(collection: T::CollectionId, item: T::ItemId)
+- Thawed(collection: T::CollectionId, item: T::ItemId)
+- CollectionFrozen(collection: T::CollectionId)
+- CollectionThawed(collection: T::CollectionId)
+- OwnerChanged(collection: T::CollectionId, new_owner: T::AccountId)
+- TeamChanged(collection: T::CollectionId, issuer: T::AccountId, admin: T::AccountId, freezer: T::AccountId)
+- ApprovedTransfer(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId, delegate: T::AccountId)
+- ApprovalCancelled(collection: T::CollectionId, item: T::ItemId, owner: T::AccountId, delegate: T::AccountId)
+- ItemStatusChanged(collection: T::CollectionId)
+- CollectionMetadataSet(collection: T::CollectionId, data: BoundedVec<u8, T::StringLimit>, is_frozen: bool)
+- CollectionMetadataCleared(collection: T::CollectionId)
+- MetadataSet(collection: T::CollectionId, item: T::ItemId, data: BoundedVec<u8, T::StringLimit>, is_frozen: bool)
+- MetadataCleared(collection: T::CollectionId, item: T::ItemId)
+- Redeposited(collection: T::CollectionId, successful_items: Vec<T::ItemId>)
+- AttributeSet(collection: T::CollectionId, maybe_item: Option<T::ItemId>, key: BoundedVec<u8, T::KeyLimit>, value: BoundedVec<u8, T::ValueLimit>)
+- AttributeCleared(collection: T::CollectionId, maybe_item: Option<T::ItemId>, key: BoundedVec<u8, T::KeyLimit>)
+- OwnershipAcceptanceChanged(who: T::AccountId, maybe_collection: Option<T::CollectionId>)
+- CollectionMaxSupplySet(collection: T::CollectionId, max_supply: u32)
+- ItemPriceSet(collection: T::CollectionId, item: T::ItemId, price: ItemPrice<T, I>, whitelisted_buyer: Option<T::AccountId>)
+- ItemPriceRemoved(collection: T::CollectionId, item: T::ItemId)
+- ItemBought(collection: T::CollectionId, item: T::ItemId, price: ItemPrice<T, I>, seller: T::AccountId, buyer: T::AccountId)
+### utility (8 events)
+- BatchInterrupted
+- BatchCompleted
+- BatchCompletedWithErrors
+- ItemCompleted
+- ItemFailed
+- DispatchedAs
+- IfElseMainSuccess
+- IfElseFallbackCalled
+### vesting (3 events)
+- VestingCreated
+- VestingUpdated
+- VestingCompleted
+### voterList (2 events)
+- Rebagged
+- ScoreUpdated
+### whitelist (6 events)
+- CallWhitelisted
+- WhitelistedCallRemoved
+- WhitelistedCallDispatched
+- DispatchDeferred
+- DeferredDispatchRemoved
+- DeferredDispatchExecuted
+### xcmpQueue (1 events)
+- XcmpMessageSent
+
+## Runtime APIs
+- accountNonceApi: accountNonce
+- assetConversionApi: quotePriceTokensForExactTokens, quotePriceExactTokensForTokens, getReserves
+- assetRewards: poolCreationCost
+- auraApi: slotDuration, authorities
+- auraUnincludedSegmentApi: canBuildUpon
+- authorizedAliasersApi: authorizedAliasers, isAuthorizedAlias
+- blockBuilder: applyExtrinsic, finalizeBlock, inherentExtrinsics, checkInherents
+- collectCollationInfo: collectCollationInfo
+- core: version, executeBlock, initializeBlock
+- dryRunApi: dryRunCall, dryRunXcm
+- fungiblesApi: queryAccountBalances
+- genesisBuilder: buildState, getPreset, presetNames
+- getParachainInfo: parachainId
+- locationToAccountApi: convertLocation
+- metadata: metadata, metadataAtVersion, metadataVersions
+- nftsApi: owner, collectionOwner, attribute, customAttribute, systemAttribute, collectionAttribute
+- nominationPoolsApi: pendingRewards, pointsToBalance, balanceToPoints, poolPendingSlash, memberPendingSlash, poolNeedsDelegateMigration, memberNeedsDelegateMigration, memberTotalBalance, poolBalance, poolAccounts
+- offchainWorkerApi: offchainWorker
+- relayParentOffsetApi: relayParentOffset, maxClaimQueueOffset
+- reviveApi: ethBlock, ethBlockHash, ethReceiptData, blockGasLimit, maxExtrinsicWeightInGas, balance, gasPrice, nonce, call, instantiate, ethTransact, ethTransactWithConfig, ethEstimateGas, ethPreDispatchWeight, uploadCode, getStorage, getStorageVarKey, traceBlock, traceTx, traceCall, traceCallWithConfig, blockAuthor, address, accountId, runtimePalletsAddress, code, newBalanceWithDust, versionDeclarations, ethBlockVersioned, ethBlockHashVersioned, ethReceiptDataVersioned, blockGasLimitVersioned, maxExtrinsicWeightInGasVersioned, balanceVersioned, gasPriceVersioned, nonceVersioned, callVersioned, instantiateVersioned, ethTransactVersioned, ethEstimateGasVersioned, ethPreDispatchWeightVersioned, uploadCodeVersioned, getStorageVersioned, runtimePalletsAddressVersioned, codeVersioned, accountIdVersioned, newBalanceWithDustVersioned, blockAuthorVersioned, addressVersioned, traceBlockVersioned, traceTxVersioned, traceCallVersioned
+- runtimeViewFunction: executeViewFunction
+- schedulingV3EnabledApi: schedulingV3Enabled
+- sessionKeys: generateSessionKeys, decodeSessionKeys
+- stakingApi: nominationsQuota, erasStakersPageCount, pendingRewards
+- taggedTransactionQueue: validateTransaction
+- targetBlockRate: targetBlockRate
+- transactionPaymentApi: queryInfo, queryFeeDetails, queryWeightToFee, queryLengthToFee
+- transactionPaymentCallApi: queryCallInfo, queryCallFeeDetails, queryWeightToFee, queryLengthToFee
+- trustedQueryApi: isTrustedReserve, isTrustedTeleporter
+- xcmPaymentApi: queryAcceptablePaymentAssets, queryXcmWeight, queryWeightToAssetFee, queryDeliveryFees
+
+## Latest finalized block #18168920 (0xd324a66d2bbbd3f70882f855f5786c96eda5e1c84dbe8f41f41defbab38c8d20)
+- Extrinsics: 2 | Events: 10
+- system.ExtrinsicSuccess {"dispatchInfo":{"weight":{"refTime":"125,000,000","proofSize":"0"},"class":"Mandatory","paysFee":"Yes"}}
+- system.ExtrinsicSuccess {"dispatchInfo":{"weight":{"refTime":"191,574,000","proofSize":"1,493"},"class":"Mandatory","paysFee":"Yes"}}
+- voterList.ScoreUpdated {"who":"5HbEJ5Q6PuMNLdRQqATnapWokT3ZtUa47GKEseTDDwt9BHNn","newScore":"3,289,728,477,222"}
+- voterList.ScoreUpdated {"who":"5Ca15K3hy3UaDU1zuJK6yKbCfqRMDKTVkDbyu3zDnATTymUz","newScore":"3,289,002,404,131"}
+- voterList.ScoreUpdated {"who":"5C5we4Ahqy8w1XyyNtRVYvS2A3Xjf7RCS9UHvM1xC1kPmTV5","newScore":"3,290,648,954,516"}
+- voterList.ScoreUpdated {"who":"5CMD6iWVmckdJhxUrA9CTP1AW1HcShmGBB73L9iBwHjHk5zj","newScore":"3,289,463,842,645"}
+- voterList.ScoreUpdated {"who":"5Cty4yjAEX2vgXQrhE4mpiFJnPFLeJtYU1BtHhHhxAjjVmNG","newScore":"3,290,416,610,776"}
+- voterList.ScoreUpdated {"who":"5Ci39btE8uoQwG4jiKCu2ccYk79iiuMzDakt64aovAmRhA8P","newScore":"3,290,848,419,142"}
+- voterList.ScoreUpdated {"who":"5F1iMXqe1ZeZbhvZro4iyky4kFF7vq9bvXyowboZ6XS3ysSA","newScore":"3,290,461,321,394"}
+- voterList.ScoreUpdated {"who":"5EqCRBq6ii8yanEvSz7MHdx62EZYKZaZyKDX6VHaNaCVgD51","newScore":"3,289,500,028,549"}
