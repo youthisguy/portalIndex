@@ -14,3 +14,5 @@
 - Docker reinstalled; Postgres up via compose, schema loaded.
 - Ingester verified on Westend Asset Hub: backfill, live follow, and restart resume (no gaps).
 - PostGraphile failed: table `cursor` clashed with its built-in Cursor type. Renamed to `indexer_cursor`.
+- Zero-handler typed table generator working: tables are created from chain metadata, one per event, for the pallets set in PALLETS.
+- PostGraphile added as a project dependency (npm run api). ingest and api scripts added to package.json.
