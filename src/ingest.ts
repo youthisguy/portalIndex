@@ -56,7 +56,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number) {
       );
     }
     await client.query(
-      `INSERT INTO cursor (chain_key, last_block) VALUES ($1,$2)
+      `INSERT INTO indexer_cursor (chain_key, last_block) VALUES ($1,$2)
        ON CONFLICT (chain_key) DO UPDATE SET last_block = $2, updated_at = now()`,
       [chainKey, n]
     );
@@ -75,7 +75,7 @@ async function main() {
   const chainKey = api.genesisHash.toHex();
   console.log(`Connected to ${(await api.rpc.system.chain()).toString()} (${chainKey.slice(0, 10)}...)`);
 
-  const res = await pool.query("SELECT last_block FROM cursor WHERE chain_key = $1", [chainKey]);
+  const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
   if (res.rows.length) {
     next = Number(res.rows[0].last_block) + 1;

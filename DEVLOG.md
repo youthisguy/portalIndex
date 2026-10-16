@@ -8,3 +8,9 @@
 - Staking pallet has EraPaid, Rewarded, Slashed, Kicked, Chilled, ValidatorPrefsSet (on stand-in only).
 - ForeignAssets and PoolAssets reuse the Assets event shape, so generic handling covers them.
 - Fix: some pallets lack typeName in event fields. Use registry.lookup.getTypeDef(f.type) instead.
+- Ingester running against stand-in chain, cursor resume verified.
+
+## 2026-10-16
+- Docker reinstalled; Postgres up via compose, schema loaded.
+- Ingester verified on Westend Asset Hub: backfill, live follow, and restart resume (no gaps).
+- PostGraphile failed: table `cursor` clashed with its built-in Cursor type. Renamed to `indexer_cursor`.
