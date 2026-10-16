@@ -1,0 +1,65 @@
+flowchart TB
+    subgraph Chain["Portaldot V3 Testnet"]
+        RPC["Substrate RPC (wss)"]
+        META["Runtime Metadata"]
+        REV["Revive pallet events (contract logs)"]
+        NATIVE["Native pallets: Assets, Uniques, Nfts, Balances"]
+        RPC --- META
+        RPC --- REV
+        RPC --- NATIVE
+    end
+
+    subgraph Ingest["PortalIndex Ingester (TypeScript, polkadot-js)"]
+        FIN["Finalized block walker + backfill"]
+        DEC["Event/extrinsic decoder"]
+        SCHEMA["Schema generator (metadata to SQL)"]
+        ABI["ABI decoder (user-supplied ABI)"]
+        MAP["Address mapper (H160 to SS58 via reviveApi.accountId)"]
+        FIN --> DEC
+        DEC --> ABI
+        DEC --> MAP
+    end
+
+    subgraph Store["Postgres"]
+        GEN["Generic tables: events, extrinsics"]
+        TYPED["Typed tables: assets, balances, collections, items"]
+        EVM["Decoded contract logs"]
+        ADDR["Address map table"]
+        CKPT["Checkpoint state + cursor"]
+    end
+
+    subgraph API["API Layer"]
+        GQL["PostGraphile / Hasura (auto GraphQL)"]
+        SUB["Subscriptions (live updates)"]
+        REST["REST wrapper (optional)"]
+        GQL --- SUB
+        GQL --- REST
+    end
+
+    subgraph Clients["Consumers"]
+        TSC["Typed TS client"]
+        APPS["DApps: leaderboard, NFT gallery"]
+        PDK["PDK plugin / companion"]
+    end
+
+    ANCHOR["Optional on-chain checkpoint contract (state hash, testnet tx)"]
+    CLI["pindex init (Docker Compose)"]
+
+    META --> SCHEMA
+    SCHEMA --> GEN
+    SCHEMA --> TYPED
+    RPC --> FIN
+    DEC --> GEN
+    DEC --> TYPED
+    ABI --> EVM
+    MAP --> ADDR
+    FIN --> CKPT
+    Store --> GQL
+    GQL --> TSC
+    TSC --> APPS
+    GQL --> PDK
+    CKPT --> ANCHOR
+    ANCHOR --> RPC
+    CLI -.launches.-> Ingest
+    CLI -.launches.-> Store
+    CLI -.launches.-> API
