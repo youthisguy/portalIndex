@@ -1,10 +1,12 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import pg from "pg";
+import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
 
 const WS = process.env.WS_URL;
 const DB = process.env.DATABASE_URL ?? "postgres://portalindex:portalindex@localhost:5432/portalindex";
 const BACKFILL = Number(process.env.BACKFILL ?? 200); // blocks to backfill on first run
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : undefined;
+const PALLETS = (process.env.PALLETS ?? "assets,uniques,nfts,balances,staking").trim();
 const DELAY_MS = Number(process.env.DELAY_MS ?? 100); // be gentle with public RPCs
 
 if (!WS) {
@@ -33,7 +35,7 @@ function eventData(event: any): Record<string, unknown> {
   return obj;
 }
 
-async function processBlock(api: ApiPromise, chainKey: string, n: number) {
+async function processBlock(api: ApiPromise, chainKey: string, n: number, typed: Map<string, EventTable>) {
   const hash = await api.rpc.chain.getBlockHash(n);
   const apiAt = await api.at(hash);
   const [events, now] = await Promise.all([
@@ -54,6 +56,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number) {
          ON CONFLICT (block_number, event_index) DO NOTHING`,
         [n, i, hash.toHex(), extIdx, event.section, event.method, JSON.stringify(eventData(event)), blockTime]
       );
+      await insertTyped(client, typed, event, n, i, hash.toHex(), extIdx, blockTime);
     }
     await client.query(
       `INSERT INTO indexer_cursor (chain_key, last_block) VALUES ($1,$2)
@@ -75,6 +78,10 @@ async function main() {
   const chainKey = api.genesisHash.toHex();
   console.log(`Connected to ${(await api.rpc.system.chain()).toString()} (${chainKey.slice(0, 10)}...)`);
 
+  const typed = buildEventMap(api, PALLETS === "*" ? "*" : PALLETS.split(",").map((p) => p.trim()));
+  await ensureTables(pool, typed);
+  console.log(`Typed tables ready: ${typed.size} (pallets: ${PALLETS})`);
+
   const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
   if (res.rows.length) {
@@ -95,7 +102,7 @@ async function main() {
     try {
       const target = header.number.toNumber();
       while (next <= target) {
-        await processBlock(api, chainKey, next);
+        await processBlock(api, chainKey, next, typed);
         next++;
         await sleep(DELAY_MS);
       }

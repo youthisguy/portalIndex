@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ingest": "tsx src/ingest.ts",
+    "api": "postgraphile -c postgres://portalindex:portalindex@localhost:5432/portalindex --watch --enhance-graphiql --dynamic-json"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +14,7 @@
   "dependencies": {
     "@polkadot/api": "^17.0.2",
     "pg": "^8.23.1",
+    "postgraphile": "^4.14.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
