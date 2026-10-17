@@ -16,3 +16,9 @@
 - PostGraphile failed: table `cursor` clashed with its built-in Cursor type. Renamed to `indexer_cursor`.
 - Zero-handler typed table generator working: tables are created from chain metadata, one per event, for the pallets set in PALLETS.
 - PostGraphile added as a project dependency (npm run api). ingest and api scripts added to package.json.
+
+## 2026-10-17
+- New Portaldot RPC live. Metadata dumped: Assets, Uniques, Nfts, Revive, Balances, Staking all present. Contracts (WASM) and Revive (EVM) both emit ContractEmitted.
+- Ingesting Portaldot into a separate database (167 typed tables generated, same code as the Westend run).
+- Node is pruned (no archive): state for old blocks is discarded. Added indexer_gaps table and gap-skip logic; tested by forcing the cursor back.
+- EVM endpoint verified: chain ID 420420777.
