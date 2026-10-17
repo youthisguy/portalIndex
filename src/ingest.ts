@@ -7,6 +7,7 @@ const DB = process.env.DATABASE_URL ?? "postgres://portalindex:portalindex@local
 const BACKFILL = Number(process.env.BACKFILL ?? 200); // blocks to backfill on first run
 const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : undefined;
 const PALLETS = (process.env.PALLETS ?? "assets,uniques,nfts,balances,staking").trim();
+const SAFE_WINDOW = Number(process.env.SAFE_WINDOW ?? 150); // non-archive nodes keep ~256 blocks of state
 const DELAY_MS = Number(process.env.DELAY_MS ?? 100); // be gentle with public RPCs
 
 if (!WS) {
@@ -73,6 +74,13 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   console.log(`block ${n}: ${events.length} events`);
 }
 
+async function recordGap(chainKey: string, from: number, to: number, reason: string) {
+  await pool.query(
+    `INSERT INTO indexer_gaps (chain_key, from_block, to_block, reason) VALUES ($1,$2,$3,$4)`,
+    [chainKey, from, to, reason]
+  );
+}
+
 async function main() {
   const api = await ApiPromise.create({ provider: new WsProvider(WS) });
   const chainKey = api.genesisHash.toHex();
@@ -81,6 +89,12 @@ async function main() {
   const typed = buildEventMap(api, PALLETS === "*" ? "*" : PALLETS.split(",").map((p) => p.trim()));
   await ensureTables(pool, typed);
   console.log(`Typed tables ready: ${typed.size} (pallets: ${PALLETS})`);
+
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS indexer_gaps (
+       id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
+       to_block BIGINT NOT NULL, reason TEXT NOT NULL, detected_at TIMESTAMPTZ NOT NULL DEFAULT now())`
+  );
 
   const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
@@ -102,9 +116,22 @@ async function main() {
     try {
       const target = header.number.toNumber();
       while (next <= target) {
-        await processBlock(api, chainKey, next, typed);
-        next++;
-        await sleep(DELAY_MS);
+        try {
+          await processBlock(api, chainKey, next, typed);
+          next++;
+          await sleep(DELAY_MS);
+        } catch (e: any) {
+          const msg = String(e?.message ?? e);
+          // Non-archive node: old state is gone. Record the gap honestly and jump ahead.
+          if (/discarded|unknown block|4003/i.test(msg)) {
+            const resume = Math.max(next + 1, target - SAFE_WINDOW);
+            await recordGap(chainKey, next, resume - 1, "state pruned by node");
+            console.warn(`GAP: blocks ${next}-${resume - 1} unavailable (pruned). Resuming at ${resume}.`);
+            next = resume;
+          } else {
+            throw e;
+          }
+        }
       }
     } catch (e) {
       console.error("ingest error, will retry on next head:", e);
