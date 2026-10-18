@@ -49,7 +49,7 @@ button{cursor:pointer;font-weight:600}
   <p class="sub">Token holders, NFT owners and the latest chain events, read from the PortalIndex REST API. No custom indexer code behind it.</p>
   <div class="bar">
     <label for="api" class="sr">API address</label>
-    <input id="api" value="http://localhost:3000" aria-label="API address">
+    <input id="api" value="https://portalindex-98f0.onrender.com" aria-label="API address">
     <button id="go">Refresh</button>
     <span id="status"></span>
   </div>
@@ -177,6 +177,7 @@ async function load() {
 $("#go").addEventListener("click", load);
 $("#asset").addEventListener("change", (e) => { selected = e.target.value; load(); });
 try { const saved = localStorage.getItem("pi_api"); if (saved) $("#api").value = saved; } catch (_) {}
+const qApi = new URLSearchParams(location.search).get("api"); if (qApi) $("#api").value = qApi;
 $("#api").addEventListener("change", () => { try { localStorage.setItem("pi_api", $("#api").value); } catch (_) {} load(); });
 load(); setInterval(load, 10000);
 </script>
