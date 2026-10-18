@@ -54,6 +54,11 @@ button{cursor:pointer;font-weight:600}
     <span id="status"></span>
   </div>
   <p id="notice" role="status"></p>
+  <section aria-labelledby="h-look" style="margin:0 0 40px">
+    <h2 id="h-look">Look up an address</h2>
+    <div class="bar"><input id="addr" placeholder="Paste a 5… or 0x… address" aria-label="Address"><button id="find">Look up</button></div>
+    <div id="look"></div>
+  </section>
   <div class="grid">
     <section aria-labelledby="h-holders">
       <h2 id="h-holders">Token holders</h2>
@@ -179,6 +184,39 @@ $("#asset").addEventListener("change", (e) => { selected = e.target.value; load(
 try { const saved = localStorage.getItem("pi_api"); if (saved) $("#api").value = saved; } catch (_) {}
 const qApi = new URLSearchParams(location.search).get("api"); if (qApi) $("#api").value = qApi;
 $("#api").addEventListener("change", () => { try { localStorage.setItem("pi_api", $("#api").value); } catch (_) {} load(); });
+
+async function lookup() {
+  const base = $("#api").value.replace(/\/$/, "");
+  let a = $("#addr").value.trim(); const out = $("#look"); out.replaceChildren();
+  if (!a) return;
+  const say = (m) => out.append(el("div", "empty", m));
+  try {
+    let h160 = "";
+    if (/^0x[0-9a-fA-F]{40}$/.test(a)) {
+      const m = await get(base, `/address_map?h160=eq.${a.toLowerCase()}`);
+      if (!m.length) return say("No activity has been indexed for that 0x address yet.");
+      h160 = a.toLowerCase(); a = m[0].account;
+    } else {
+      const m = await get(base, `/address_map?account=eq.${encodeURIComponent(a)}`);
+      if (m.length) h160 = m[0].h160;
+    }
+    const q = encodeURIComponent(a);
+    const [bal, nft, evs] = await Promise.all([
+      get(base, `/asset_balances?holder=eq.${q}`),
+      get(base, `/nft_owners?owner=eq.${q}`),
+      get(base, `/account_events?account=eq.${q}&order=block_number.desc&limit=15`),
+    ]);
+    out.append(el("p", "sub", a + (h160 ? "  ·  " + h160 : "")));
+    if (!bal.length && !nft.length && !evs.length) return say("Nothing indexed for this address yet.");
+    const rows = el("div", "rows");
+    bal.forEach((b) => { const r = el("div", "row"); r.append(el("span", null, "Asset " + b.asset_id), el("span", "num", fmt(b.balance))); rows.append(r); });
+    nft.forEach((n) => { const r = el("div", "row"); r.append(el("span", null, `${n.pallet} ${n.collection} #${n.item}`), el("span", "num", "NFT")); rows.append(r); });
+    out.append(rows);
+    evs.forEach((e) => { const r = el("div", "ev"); r.append(el("span", null, "#" + e.block_number), el("span", null, e.pallet + "." + e.name)); out.append(r); });
+  } catch (e) { say("Lookup failed: " + e.message); }
+}
+$("#find").addEventListener("click", lookup);
+$("#addr").addEventListener("keydown", (e) => { if (e.key === "Enter") lookup(); });
 load(); setInterval(load, 10000);
 </script>
 </body>

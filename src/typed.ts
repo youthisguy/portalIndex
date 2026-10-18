@@ -2,7 +2,7 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Pool, PoolClient } from "pg";
 
 export type Kind = "text" | "integer" | "bigint" | "numeric" | "boolean" | "jsonb";
-export interface Col { name: string; kind: Kind; index: number }
+export interface Col { name: string; kind: Kind; index: number; account: boolean }
 export interface EventTable { key: string; table: string; cols: Col[]; insertSql: string }
 
 const SQL_TYPE: Record<Kind, string> = {
@@ -51,7 +51,7 @@ export function buildEventMap(api: ApiPromise, pallets: string[] | "*"): Map<str
         while (used.has(name)) name += "_f";
         used.add(name);
         const typeName = api.registry.lookup.getTypeDef(f.type).type;
-        return { name, kind: kindOf(typeName), index: i };
+        return { name, kind: kindOf(typeName), index: i, account: typeName === "AccountId32" };
       });
 
       const table = `${snake(section)}_${snake(method)}`.slice(0, 63);
@@ -114,9 +114,9 @@ export async function insertTyped(
   blockHash: string,
   extrinsicIndex: number | null,
   blockTime: Date
-) {
+) : Promise<string[]> {
   const t = map.get(`${event.section}.${event.method}`);
-  if (!t) return;
+  if (!t) return [];
   const values = [
     blockNumber,
     eventIndex,
@@ -126,4 +126,21 @@ export async function insertTyped(
     ...t.cols.map((c) => convert(event.data[c.index], c.kind)),
   ];
   await client.query(t.insertSql, values);
+
+  // Record every account this event touched, so any address can be looked up later.
+  const accounts = new Set<string>();
+  for (const c of t.cols) {
+    if (!c.account) continue;
+    const v = event.data[c.index];
+    const val = v && typeof v.isNone === "boolean" ? (v.isNone ? null : v.unwrap().toString()) : v?.toString();
+    if (val) accounts.add(val);
+  }
+  for (const a of accounts) {
+    await client.query(
+      `INSERT INTO account_events (account, block_number, event_index, pallet, name)
+       VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+      [a, blockNumber, eventIndex, event.section, event.method]
+    );
+  }
+  return [...accounts];
 }

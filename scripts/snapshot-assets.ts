@@ -39,6 +39,12 @@ async function main() {
   } finally {
     c.release();
   }
+  for (const r of rows) {
+    try {
+      const h160 = (await (api.call as any).reviveApi.address(r.holder)).toString().toLowerCase();
+      await pool.query("INSERT INTO address_map (account, h160) VALUES ($1,$2) ON CONFLICT (account) DO NOTHING", [r.holder, h160]);
+    } catch {}
+  }
   console.log(`Snapshot at block ${block}: ${rows.length} asset balances stored`);
   await pool.end();
   await api.disconnect();

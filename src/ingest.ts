@@ -37,6 +37,22 @@ function eventData(event: any): Record<string, unknown> {
   return obj;
 }
 
+const knownAccounts = new Set<string>();
+
+// Best effort: ask the runtime for each account's H160 and store both forms.
+async function mapAccounts(api: ApiPromise, accounts: string[]) {
+  for (const a of accounts) {
+    if (knownAccounts.has(a)) continue;
+    try {
+      const h160 = (await (api.call as any).reviveApi.address(a)).toString().toLowerCase();
+      await pool.query("INSERT INTO address_map (account, h160) VALUES ($1,$2) ON CONFLICT (account) DO NOTHING", [a, h160]);
+      knownAccounts.add(a);
+    } catch {
+      /* mapping is optional; never fail a block over it */
+    }
+  }
+}
+
 async function processBlock(api: ApiPromise, chainKey: string, n: number, typed: Map<string, EventTable>) {
   const hash = await api.rpc.chain.getBlockHash(n);
   const apiAt = await api.at(hash);
@@ -46,6 +62,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   ]);
   const blockTime = new Date(Number(now.toString()));
 
+  const touched = new Set<string>();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -58,7 +75,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
          ON CONFLICT (block_number, event_index) DO NOTHING`,
         [n, i, hash.toHex(), extIdx, event.section, event.method, JSON.stringify(eventData(event)), blockTime]
       );
-      await insertTyped(client, typed, event, n, i, hash.toHex(), extIdx, blockTime);
+      (await insertTyped(client, typed, event, n, i, hash.toHex(), extIdx, blockTime)).forEach((a) => touched.add(a));
     }
     await client.query(
       `INSERT INTO indexer_cursor (chain_key, last_block) VALUES ($1,$2)
@@ -72,6 +89,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   } finally {
     client.release();
   }
+  await mapAccounts(api, [...touched]);
   console.log(`block ${n}: ${events.length} events`);
 }
 
