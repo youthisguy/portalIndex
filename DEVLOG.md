@@ -22,3 +22,12 @@
 - Ingesting Portaldot into a separate database (167 typed tables generated, same code as the Westend run).
 - Node is pruned (no archive): state for old blocks is discarded. Added indexer_gaps table and gap-skip logic; tested by forcing the cursor back.
 - EVM endpoint verified: chain ID 420420777.
+- Era data readable from storage (historyDepth 84, eras 0-18 verified); 1-2 validators on testnet.
+
+## 2026-10-18
+- Derived views built from the typed tables: asset_balances, asset_summary, nft_owners, nft_holdings. Fixture-tested in Postgres.
+- state-check found 2 assets and 1 balance already on Portaldot, created before indexing started. Added baseline snapshot (asset_baseline, state_snapshots, scripts/snapshot-assets.ts) so derived balances are correct on a pruned node.
+- Verified end to end on the live testnet: asset 2, one holder, 15000000000000000000 raw units, via REST.
+- PostgREST added for the REST API (read-only web_anon role). Demo page added in demo/index.html.
+- Docker restart policies set so containers survive Docker restarts.
+- Hosting research: Render free web services sleep after 15 minutes, free Postgres expires after 30 days, background workers have no free tier.
