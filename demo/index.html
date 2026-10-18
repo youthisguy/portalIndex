@@ -5,76 +5,255 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PortalIndex demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#eef1f4;--ink:#14213d;--muted:#5b6678;--line:#cdd5df;--bar:#c9d6ea;--bar-top:#e0852b;--field:#fff;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1624;--ink:#e8edf5;--muted:#93a0b5;--line:#27334a;--bar:#1f2c46;--bar-top:#f0a04b;--field:#161f31;color-scheme:dark}}
+:root{
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #101828;
+  --muted: #475467;
+  --line: #d0d5dd;
+  --bar: #e4e7ec;
+  --bar-top: #1570ef;
+  --field: #ffffff;
+  --notice-bg: #fff4ed;
+  --notice-border: #fb6514;
+  --notice-ink: #b93815;
+  --code-bg: #f8f9fa;
+  color-scheme: light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg: #0b0f17;
+    --surface: #131b2e;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --line: #1e293b;
+    --bar: #1e293b;
+    --bar-top: #3b82f6;
+    --field: #0f172a;
+    --notice-bg: #2a150c;
+    --notice-border: #f97316;
+    --notice-ink: #fdba74;
+    --code-bg: #0a0e17;
+    color-scheme: dark;
+  }
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
-main{max-width:1080px;margin:0 auto;padding:40px 20px 64px}
-h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.05;margin:0 0 8px;font-weight:700;letter-spacing:-.02em;max-width:14em}
-h2{font-size:1.25rem;margin:0 0 12px;font-weight:600}
-p.sub{margin:0 0 24px;color:var(--muted);max-width:44em}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
-input,select,button{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
-input{min-width:min(100%,280px)}
-button{cursor:pointer;font-weight:600}
+main{max-width:1080px;margin:0 auto;padding:32px 20px 64px}
+
+/* Typography & Hierarchy */
+h1{font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.1;margin:0 0 6px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.15rem;margin:0 0 12px;font-weight:600;letter-spacing:-.01em}
+p.sub{margin:0 0 24px;color:var(--muted);max-width:44em;font-size:0.98rem}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Header & Status Bar */
+header.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #12b76a;
+  display: inline-block;
+}
+.status-dot.loading { background: #f79009; animation: pulse 1.2s infinite; }
+.status-dot.error { background: #f04438; }
+
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+/* Controls & Inputs */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input,select,button{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 14px;transition:border-color 0.15s, box-shadow 0.15s}
+input{min-width:min(100%,320px);flex-grow:1}
+button{cursor:pointer;font-weight:600;background:var(--surface);white-space:nowrap}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--bar-top);color:#fff;border-color:transparent}
+button.primary:hover{opacity:0.9}
 :focus-visible{outline:2px solid var(--bar-top);outline-offset:2px}
-#status{color:var(--muted);font-size:.9rem}
-#notice{margin:0 0 24px;padding:10px 12px;border-left:4px solid var(--bar-top);background:var(--field);display:none}
-.grid{display:grid;gap:40px;grid-template-columns:1fr}
+
+/* Notice Banner */
+#notice{margin:0 0 24px;padding:12px 16px;border-left:4px solid var(--notice-border);background:var(--notice-bg);color:var(--notice-ink);border-radius:0 8px 8px 0;font-weight:500;display:none;font-size:0.95rem}
+
+/* Main Lookup Section */
+.lookup-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:32px;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.lookup-bar{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Address Styling & Copy */
+code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9em; }
+.addr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  font-size: 0.85em;
+}
+.copy-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--muted);
+  border-radius: 4px;
+}
+.copy-btn:hover { color: var(--ink); background: var(--line); }
+
+/* Layout Grid & Cards */
+.grid{display:grid;gap:24px;grid-template-columns:1fr}
 @media (min-width:900px){.grid{grid-template-columns:1.2fr 1fr}}
-.rows{display:grid;gap:6px}
-.row{position:relative;display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:6px;overflow:hidden;background:var(--field)}
-.row i{position:absolute;inset:0 auto 0 0;background:var(--bar);z-index:0}
-.row:first-child i{background:var(--bar-top);opacity:.35}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px}
+
+/* Holder Rows */
+.rows{display:grid;gap:8px}
+.row{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;overflow:hidden;background:var(--code-bg);border:1px solid var(--line)}
+.row i{position:absolute;inset:0 auto 0 0;background:var(--bar);z-index:0;opacity:0.6}
+.row:first-child i{background:var(--bar-top);opacity:0.15}
 .row span{position:relative;z-index:1;white-space:nowrap}
-.row .who{overflow:hidden;text-overflow:ellipsis}
-.row .num{font-variant-numeric:tabular-nums;font-weight:600}
-.row small{color:var(--muted);margin-left:8px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-.tile{padding:10px;border-radius:6px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;word-break:break-all}
-.tile b{font-size:1.5rem;line-height:1}
-.tile small{color:var(--muted);font-size:.78rem}
-.events{display:grid;gap:4px;margin-top:8px}
-.ev{display:grid;grid-template-columns:90px 190px 1fr;gap:12px;padding:6px 0;border-top:1px solid var(--line);font-size:.9rem}
-.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.empty{color:var(--muted);padding:12px 0}
-@media (max-width:640px){.ev{grid-template-columns:70px 1fr}.ev code{grid-column:1/-1}}
+.row .who{overflow:hidden;text-overflow:ellipsis;flex-shrink:1}
+.row .num{font-variant-numeric:tabular-nums;font-weight:600;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.row small{color:var(--muted);font-size:0.75rem;font-weight:400}
+
+/* NFT Tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{padding:12px;border-radius:8px;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);background:var(--code-bg)}
+.tile b{font-size:1.2rem;line-height:1;font-family:"JetBrains Mono", monospace}
+.tile small{color:var(--muted);font-size:0.78rem;overflow:hidden;text-overflow:ellipsis}
+
+/* Events Feed */
+.events{display:grid;gap:8px}
+.ev{display:grid;grid-template-columns:90px 180px 1fr;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:0.9rem}
+.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85em}
+
+/* Empty & Skeleton States */
+.empty{color:var(--muted);padding:24px 12px;text-align:center;font-size:0.95rem;background:var(--code-bg);border-radius:8px;border:1px dashed var(--line)}
+.skeleton {
+  background: linear-gradient(90deg, var(--line) 25%, var(--code-bg) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+  color: transparent !important;
+  user-select: none;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Developer Accordion */
+details.dev-area {
+  margin-top: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px 16px;
+}
+details.dev-area summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.dev-content {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width:640px){
+  .row{flex-wrap:wrap}
+  .ev{grid-template-columns:70px 1fr}
+  .ev code{grid-column:1/-1}
+  main{padding:16px 12px 48px}
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-dot.loading, .skeleton { animation: none !important; }
+}
 </style>
 </head>
 <body>
 <main>
-  <h1>Who holds what on Portaldot</h1>
-  <p class="sub">Token holders, NFT owners and the latest chain events, read from the PortalIndex REST API. No custom indexer code behind it.</p>
-  <div class="bar">
-    <label for="api" class="sr">API address</label>
-    <input id="api" value="https://portalindex-98f0.onrender.com" aria-label="API address">
-    <button id="go">Refresh</button>
-    <span id="status"></span>
-  </div>
-  <p id="notice" role="status"></p>
-  <section aria-labelledby="h-look" style="margin:0 0 40px">
+  <header class="app-header">
+    <div>
+      <h1>Who holds what on Portaldot</h1>
+      <p class="sub">Token holders, NFT owners and the latest chain events, read directly from the PortalIndex REST API.</p>
+    </div>
+    <div class="status-line" role="status" aria-live="polite">
+      <span id="status-dot" class="status-dot"></span>
+      <span id="status">Connecting…</span>
+    </div>
+  </header>
+
+  <div id="notice" role="status"></div>
+
+  <!-- Primary Action: Address Lookup -->
+  <section aria-labelledby="h-look" class="lookup-card">
     <h2 id="h-look">Look up an address</h2>
-    <div class="bar"><input id="addr" placeholder="Paste a 5… or 0x… address" aria-label="Address"><button id="find">Look up</button></div>
-    <div id="look"></div>
+    <p class="sub" style="margin-bottom: 14px;">Inspect balances, NFTs, and on-chain activity for any Substrate or EVM address.</p>
+    <div class="lookup-bar">
+      <input id="addr" placeholder="Paste a 5… or 0x… address" aria-label="Address">
+      <button id="find" class="primary">Look up</button>
+    </div>
+    <div id="look" style="margin-top: 16px;"></div>
   </section>
+
+  <!-- Core Data Grid -->
   <div class="grid">
-    <section aria-labelledby="h-holders">
-      <h2 id="h-holders">Token holders</h2>
-      <div class="bar"><select id="asset" aria-label="Asset"></select></div>
+    <section aria-labelledby="h-holders" class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h2 id="h-holders" style="margin:0">Token holders</h2>
+        <select id="asset" aria-label="Asset" style="min-width: 160px;"></select>
+      </div>
       <div id="holders" class="rows"></div>
     </section>
-    <section aria-labelledby="h-nft">
+
+    <section aria-labelledby="h-nft" class="card">
       <h2 id="h-nft">NFT owners</h2>
       <div id="nfts" class="tiles"></div>
     </section>
   </div>
-  <section aria-labelledby="h-ev" style="margin-top:40px">
+
+  <!-- Latest Events -->
+  <section aria-labelledby="h-ev" class="card" style="margin-top:24px">
     <h2 id="h-ev">Latest events</h2>
     <div id="events" class="events"></div>
   </section>
+
+  <!-- Developer Settings (Collapsed) -->
+  <details class="dev-area">
+    <summary>Developer options &amp; API endpoint</summary>
+    <div class="dev-content">
+      <label for="api" style="font-size: 0.85rem; color: var(--muted);">API address</label>
+      <input id="api" value="https://portalindex-98f0.onrender.com" aria-label="API address">
+      <button id="go">Refresh now</button>
+    </div>
+  </details>
 </main>
+
 <script>
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -82,6 +261,7 @@ const short = (a) => (a && a.length > 16 ? a.slice(0, 6) + "…" + a.slice(-6) :
 const fmt = (s) => String(s).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 const hue = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 let selected = null;
+let firstLoad = true;
 
 const SAMPLE = {
   summary: [{ asset_id: 7, holders: 5, total_held: "2500000000000000" }],
@@ -97,7 +277,7 @@ const SAMPLE = {
     { pallet: "nfts", collection: 1, item: 3, owner: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" },
     { pallet: "uniques", collection: 9, item: 1, owner: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y" } ],
   events: [
-    { block_number: 71400, pallet: "nfts", name: "Issued", data: { collection: "1", item: "3", owner: "5FHneW46…694ty" } },
+    { block_number: 71400, pallet: "nfts", name: "Issued", data: { collection: "1", item: "3", owner: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV" } },
     { block_number: 71398, pallet: "assets", name: "Transferred", data: { asset_id: "7", amount: "100000000000000" } } ],
 };
 
@@ -109,28 +289,75 @@ async function get(base, path) {
   return JSON.parse(t);
 }
 
+function makeAddressElement(address) {
+  const container = el("span", "addr-pill");
+  const textSpan = el("span", null, short(address));
+  container.title = address;
+  const copyBtn = el("button", "copy-btn", "Copy");
+  copyBtn.title = "Copy full address";
+  copyBtn.type = "button";
+  copyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(address).then(() => {
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+    }).catch(() => {});
+  });
+  container.append(textSpan, copyBtn);
+  return container;
+}
+
+function renderSkeletons() {
+  const hBox = $("#holders"); hBox.replaceChildren();
+  for (let i = 0; i < 3; i++) {
+    const r = el("div", "row skeleton");
+    r.append(el("span", null, "Loading holder…"), el("span", null, "000,000"));
+    hBox.append(r);
+  }
+  const nBox = $("#nfts"); nBox.replaceChildren();
+  for (let i = 0; i < 2; i++) {
+    const t = el("div", "tile skeleton");
+    t.append(el("b", null, "#0"), el("small", null, "Loading NFT…"));
+    nBox.append(t);
+  }
+  const eBox = $("#events"); eBox.replaceChildren();
+  for (let i = 0; i < 2; i++) {
+    const ev = el("div", "ev skeleton");
+    ev.append(el("span", null, "#00000"), el("span", null, "pallet.Event"), el("code", null, "loading data..."));
+    eBox.append(ev);
+  }
+}
+
 function renderHolders(list) {
   const box = $("#holders"); box.replaceChildren();
-  if (!list.length) { box.append(el("div", "empty", "No holders yet. Mint a token and it will appear here.")); return; }
+  if (!list.length) { box.append(el("div", "empty", "No holders found for this asset.")); return; }
   const total = list.reduce((a, r) => a + BigInt(r.balance), 0n) || 1n;
   list.forEach((r) => {
     const pct = Number((BigInt(r.balance) * 10000n) / total) / 100;
     const row = el("div", "row");
     const bar = el("i"); bar.style.width = pct + "%";
-    const who = el("span", "who", short(r.holder)); who.title = r.holder;
-    const num = el("span", "num", fmt(r.balance)); num.append(el("small", null, pct.toFixed(1) + "%"));
+    const who = makeAddressElement(r.holder);
+    const num = el("span", "num");
+    const valText = fmt(r.balance);
+    num.append(el("span", null, valText), el("small", null, pct.toFixed(1) + "% · raw units"));
     row.append(bar, who, num); box.append(row);
   });
 }
 
 function renderNfts(list) {
   const box = $("#nfts"); box.replaceChildren();
-  if (!list.length) { box.append(el("div", "empty", "No NFTs yet. Mint one and it will appear here.")); return; }
+  if (!list.length) { box.append(el("div", "empty", "No NFTs found.")); return; }
   list.forEach((n) => {
     const t = el("div", "tile");
-    t.style.background = `hsl(${hue(n.pallet + n.collection)} 55% 55% / .28)`;
-    t.append(el("b", null, "#" + n.item), el("small", null, n.pallet + " collection " + n.collection), el("small", null, short(n.owner)));
-    t.title = n.owner; box.append(t);
+    t.style.background = `hsl(${hue(n.pallet + n.collection)} 55% 55% / .12)`;
+    const topRow = el("div", null);
+    topRow.append(el("b", null, "#" + n.item));
+    const meta = el("small", null, n.pallet + " · col " + n.collection);
+    const ownerEl = el("small", "mono", short(n.owner));
+    ownerEl.title = n.owner;
+    t.append(topRow, meta, ownerEl);
+    t.title = "Owner: " + n.owner;
+    box.append(t);
   });
 }
 
@@ -140,12 +367,34 @@ function renderEvents(list) {
   list.forEach((e) => {
     const row = el("div", "ev");
     const d = JSON.stringify(e.data); 
-    row.append(el("span", null, "#" + e.block_number), el("span", null, e.pallet + "." + e.name), el("code", null, d.length > 120 ? d.slice(0, 120) + "…" : d));
+    const blockSpan = el("span", "mono", "#" + e.block_number);
+    const nameSpan = el("span", "mono", e.pallet + "." + e.name);
+    const codeSpan = el("code", null, d.length > 120 ? d.slice(0, 120) + "…" : d);
+    codeSpan.title = d;
+    row.append(blockSpan, nameSpan, codeSpan);
     box.append(row);
   });
 }
 
-function notice(msg) { const n = $("#notice"); n.style.display = msg ? "block" : "none"; n.textContent = msg || ""; }
+function notice(msg) {
+  const n = $("#notice");
+  if (msg) {
+    n.textContent = "Sample data, not from the chain: " + msg;
+    n.style.display = "block";
+  } else {
+    n.style.display = "none";
+    n.textContent = "";
+  }
+}
+
+function setStatus(text, state = "normal") {
+  const statusEl = $("#status");
+  const dotEl = $("#status-dot");
+  statusEl.textContent = text;
+  dotEl.className = "status-dot";
+  if (state === "loading") dotEl.classList.add("loading");
+  if (state === "error") dotEl.classList.add("error");
+}
 
 async function showAsset(base, id, sample) {
   const list = sample ? (SAMPLE.balances[id] || []) : await get(base, `/asset_balances?asset_id=eq.${id}&order=balance.desc&limit=10`);
@@ -154,7 +403,7 @@ async function showAsset(base, id, sample) {
 
 async function load() {
   const base = $("#api").value.replace(/\/$/, "");
-  $("#status").textContent = "Loading…";
+  if (firstLoad) { setStatus("Loading data…", "loading"); renderSkeletons(); firstLoad = false; }
   let summary, nfts, events, sample = false, reason = "";
   try {
     [summary, nfts, events] = await Promise.all([
@@ -162,13 +411,18 @@ async function load() {
       get(base, "/nft_owners?limit=48"),
       get(base, "/events?name=neq.ExtrinsicSuccess&order=block_number.desc&limit=12"),
     ]);
-    if (!summary.length && !nfts.length) { sample = true; reason = "No assets or NFTs are indexed yet, so this shows sample data."; }
+    if (!summary.length && !nfts.length) { sample = true; reason = "No assets or NFTs are indexed yet."; }
   } catch (e) {
-    sample = true; reason = "Can't reach the API at " + base + " (" + e.message + "). Showing sample data. Check that PostgREST is running.";
+    sample = true; reason = "Can't reach the API at " + base + " (" + e.message + "). Check that PostgREST is running.";
     [summary, nfts, events] = [SAMPLE.summary, SAMPLE.nfts, SAMPLE.events];
   }
   if (sample) { summary = SAMPLE.summary; nfts = SAMPLE.nfts; if (!events || !events.length) events = SAMPLE.events; }
   notice(reason);
+  if (sample) {
+    setStatus("Using sample data", "error");
+  } else {
+    setStatus("Connected · Updated " + new Date().toLocaleTimeString(), "normal");
+  }
   const sel = $("#asset"); const keep = selected;
   sel.replaceChildren();
   summary.forEach((s) => { const o = el("option", null, `Asset ${s.asset_id} (${s.holders} holders)`); o.value = s.asset_id; sel.append(o); });
@@ -176,7 +430,6 @@ async function load() {
   selected = sel.value;
   try { await showAsset(base, selected, sample); } catch (e) { renderHolders([]); }
   renderNfts(nfts); renderEvents(events);
-  $("#status").textContent = "Updated " + new Date().toLocaleTimeString();
 }
 
 $("#go").addEventListener("click", load);
@@ -206,18 +459,60 @@ async function lookup() {
       get(base, `/nft_owners?owner=eq.${q}`),
       get(base, `/account_events?account=eq.${q}&order=block_number.desc&limit=15`),
     ]);
-    out.append(el("p", "sub", a + (h160 ? "  ·  " + h160 : "")));
+    
+    const headerWrap = el("div", null);
+    headerWrap.style.marginBottom = "16px";
+    headerWrap.style.display = "flex";
+    headerWrap.style.flexDirection = "column";
+    headerWrap.style.gap = "8px";
+    
+    const subText = el("div", "sub", "Addresses found:");
+    subText.style.marginBottom = "0";
+    headerWrap.append(subText);
+    
+    const addrsRow = el("div", null);
+    addrsRow.style.display = "flex";
+    addrsRow.style.gap = "8px";
+    addrsRow.style.flexWrap = "wrap";
+    addrsRow.append(makeAddressElement(a));
+    if (h160) addrsRow.append(makeAddressElement(h160));
+    headerWrap.append(addrsRow);
+    out.append(headerWrap);
+
     if (!bal.length && !nft.length && !evs.length) return say("Nothing indexed for this address yet.");
+    
     const rows = el("div", "rows");
-    bal.forEach((b) => { const r = el("div", "row"); r.append(el("span", null, "Asset " + b.asset_id), el("span", "num", fmt(b.balance))); rows.append(r); });
-    nft.forEach((n) => { const r = el("div", "row"); r.append(el("span", null, `${n.pallet} ${n.collection} #${n.item}`), el("span", "num", "NFT")); rows.append(r); });
-    out.append(rows);
-    evs.forEach((e) => { const r = el("div", "ev"); r.append(el("span", null, "#" + e.block_number), el("span", null, e.pallet + "." + e.name)); out.append(r); });
+    rows.style.marginBottom = "16px";
+    bal.forEach((b) => { 
+      const r = el("div", "row"); 
+      r.append(el("span", null, "Asset " + b.asset_id), el("span", "num", fmt(b.balance))); 
+      rows.append(r); 
+    });
+    nft.forEach((n) => { 
+      const r = el("div", "row"); 
+      r.append(el("span", null, `${n.pallet} collection ${n.collection} #${n.item}`), el("span", "num", "NFT")); 
+      rows.append(r); 
+    });
+    if (bal.length || nft.length) out.append(rows);
+
+    if (evs.length) {
+      const evTitle = el("h3", null, "Account Events");
+      evTitle.style.fontSize = "1rem";
+      evTitle.style.margin = "0 0 8px 0";
+      out.append(evTitle);
+      const evsContainer = el("div", "events");
+      evs.forEach((e) => { 
+        const r = el("div", "ev"); 
+        r.append(el("span", "mono", "#" + e.block_number), el("span", "mono", e.pallet + "." + e.name)); 
+        evsContainer.append(r); 
+      });
+      out.append(evsContainer);
+    }
   } catch (e) { say("Lookup failed: " + e.message); }
 }
 $("#find").addEventListener("click", lookup);
 $("#addr").addEventListener("keydown", (e) => { if (e.key === "Enter") lookup(); });
-load(); setInterval(load, 10000);
+load(); setInterval(load, 15000);
 </script>
 </body>
 </html>
