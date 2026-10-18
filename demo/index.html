@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PortalIndex demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--ink:#14213d;--muted:#5b6678;--line:#cdd5df;--bar:#c9d6ea;--bar-top:#e0852b;--field:#fff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1624;--ink:#e8edf5;--muted:#93a0b5;--line:#27334a;--bar:#1f2c46;--bar-top:#f0a04b;--field:#161f31;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:40px 20px 64px}
+h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.05;margin:0 0 8px;font-weight:700;letter-spacing:-.02em;max-width:14em}
+h2{font-size:1.25rem;margin:0 0 12px;font-weight:600}
+p.sub{margin:0 0 24px;color:var(--muted);max-width:44em}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+input,select,button{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input{min-width:min(100%,280px)}
+button{cursor:pointer;font-weight:600}
+:focus-visible{outline:2px solid var(--bar-top);outline-offset:2px}
+#status{color:var(--muted);font-size:.9rem}
+#notice{margin:0 0 24px;padding:10px 12px;border-left:4px solid var(--bar-top);background:var(--field);display:none}
+.grid{display:grid;gap:40px;grid-template-columns:1fr}
+@media (min-width:900px){.grid{grid-template-columns:1.2fr 1fr}}
+.rows{display:grid;gap:6px}
+.row{position:relative;display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:6px;overflow:hidden;background:var(--field)}
+.row i{position:absolute;inset:0 auto 0 0;background:var(--bar);z-index:0}
+.row:first-child i{background:var(--bar-top);opacity:.35}
+.row span{position:relative;z-index:1;white-space:nowrap}
+.row .who{overflow:hidden;text-overflow:ellipsis}
+.row .num{font-variant-numeric:tabular-nums;font-weight:600}
+.row small{color:var(--muted);margin-left:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{padding:10px;border-radius:6px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;word-break:break-all}
+.tile b{font-size:1.5rem;line-height:1}
+.tile small{color:var(--muted);font-size:.78rem}
+.events{display:grid;gap:4px;margin-top:8px}
+.ev{display:grid;grid-template-columns:90px 190px 1fr;gap:12px;padding:6px 0;border-top:1px solid var(--line);font-size:.9rem}
+.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--muted);padding:12px 0}
+@media (max-width:640px){.ev{grid-template-columns:70px 1fr}.ev code{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Who holds what on Portaldot</h1>
+  <p class="sub">Token holders, NFT owners and the latest chain events, read from the PortalIndex REST API. No custom indexer code behind it.</p>
+  <div class="bar">
+    <label for="api" class="sr">API address</label>
+    <input id="api" value="http://localhost:3000" aria-label="API address">
+    <button id="go">Refresh</button>
+    <span id="status"></span>
+  </div>
+  <p id="notice" role="status"></p>
+  <div class="grid">
+    <section aria-labelledby="h-holders">
+      <h2 id="h-holders">Token holders</h2>
+      <div class="bar"><select id="asset" aria-label="Asset"></select></div>
+      <div id="holders" class="rows"></div>
+    </section>
+    <section aria-labelledby="h-nft">
+      <h2 id="h-nft">NFT owners</h2>
+      <div id="nfts" class="tiles"></div>
+    </section>
+  </div>
+  <section aria-labelledby="h-ev" style="margin-top:40px">
+    <h2 id="h-ev">Latest events</h2>
+    <div id="events" class="events"></div>
+  </section>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const short = (a) => (a && a.length > 16 ? a.slice(0, 6) + "…" + a.slice(-6) : a || "");
+const fmt = (s) => String(s).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const hue = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+let selected = null;
+
+const SAMPLE = {
+  summary: [{ asset_id: 7, holders: 5, total_held: "2500000000000000" }],
+  balances: { 7: [
+    { holder: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV", balance: "1200000000000000" },
+    { holder: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty", balance: "600000000000000" },
+    { holder: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y", balance: "400000000000000" },
+    { holder: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", balance: "200000000000000" },
+    { holder: "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw", balance: "100000000000000" } ] },
+  nfts: [
+    { pallet: "nfts", collection: 1, item: 1, owner: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV" },
+    { pallet: "nfts", collection: 1, item: 2, owner: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" },
+    { pallet: "nfts", collection: 1, item: 3, owner: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" },
+    { pallet: "uniques", collection: 9, item: 1, owner: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y" } ],
+  events: [
+    { block_number: 71400, pallet: "nfts", name: "Issued", data: { collection: "1", item: "3", owner: "5FHneW46…694ty" } },
+    { block_number: 71398, pallet: "assets", name: "Transferred", data: { asset_id: "7", amount: "100000000000000" } } ],
+};
+
+async function get(base, path) {
+  const r = await fetch(base + path);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  // keep big integers exact: quote them before JSON parsing
+  const t = (await r.text()).replace(/"(balance|total_held)":(-?\d+)/g, '"$1":"$2"');
+  return JSON.parse(t);
+}
+
+function renderHolders(list) {
+  const box = $("#holders"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No holders yet. Mint a token and it will appear here.")); return; }
+  const total = list.reduce((a, r) => a + BigInt(r.balance), 0n) || 1n;
+  list.forEach((r) => {
+    const pct = Number((BigInt(r.balance) * 10000n) / total) / 100;
+    const row = el("div", "row");
+    const bar = el("i"); bar.style.width = pct + "%";
+    const who = el("span", "who", short(r.holder)); who.title = r.holder;
+    const num = el("span", "num", fmt(r.balance)); num.append(el("small", null, pct.toFixed(1) + "%"));
+    row.append(bar, who, num); box.append(row);
+  });
+}
+
+function renderNfts(list) {
+  const box = $("#nfts"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No NFTs yet. Mint one and it will appear here.")); return; }
+  list.forEach((n) => {
+    const t = el("div", "tile");
+    t.style.background = `hsl(${hue(n.pallet + n.collection)} 55% 55% / .28)`;
+    t.append(el("b", null, "#" + n.item), el("small", null, n.pallet + " collection " + n.collection), el("small", null, short(n.owner)));
+    t.title = n.owner; box.append(t);
+  });
+}
+
+function renderEvents(list) {
+  const box = $("#events"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No events indexed yet.")); return; }
+  list.forEach((e) => {
+    const row = el("div", "ev");
+    const d = JSON.stringify(e.data); 
+    row.append(el("span", null, "#" + e.block_number), el("span", null, e.pallet + "." + e.name), el("code", null, d.length > 120 ? d.slice(0, 120) + "…" : d));
+    box.append(row);
+  });
+}
+
+function notice(msg) { const n = $("#notice"); n.style.display = msg ? "block" : "none"; n.textContent = msg || ""; }
+
+async function showAsset(base, id, sample) {
+  const list = sample ? (SAMPLE.balances[id] || []) : await get(base, `/asset_balances?asset_id=eq.${id}&order=balance.desc&limit=10`);
+  renderHolders(list);
+}
+
+async function load() {
+  const base = $("#api").value.replace(/\/$/, "");
+  $("#status").textContent = "Loading…";
+  let summary, nfts, events, sample = false, reason = "";
+  try {
+    [summary, nfts, events] = await Promise.all([
+      get(base, "/asset_summary?order=total_held.desc&limit=20"),
+      get(base, "/nft_owners?limit=48"),
+      get(base, "/events?name=neq.ExtrinsicSuccess&order=block_number.desc&limit=12"),
+    ]);
+    if (!summary.length && !nfts.length) { sample = true; reason = "No assets or NFTs are indexed yet, so this shows sample data."; }
+  } catch (e) {
+    sample = true; reason = "Can't reach the API at " + base + " (" + e.message + "). Showing sample data. Check that PostgREST is running.";
+    [summary, nfts, events] = [SAMPLE.summary, SAMPLE.nfts, SAMPLE.events];
+  }
+  if (sample) { summary = SAMPLE.summary; nfts = SAMPLE.nfts; if (!events || !events.length) events = SAMPLE.events; }
+  notice(reason);
+  const sel = $("#asset"); const keep = selected;
+  sel.replaceChildren();
+  summary.forEach((s) => { const o = el("option", null, `Asset ${s.asset_id} (${s.holders} holders)`); o.value = s.asset_id; sel.append(o); });
+  if (keep && summary.some((s) => String(s.asset_id) === String(keep))) sel.value = keep;
+  selected = sel.value;
+  try { await showAsset(base, selected, sample); } catch (e) { renderHolders([]); }
+  renderNfts(nfts); renderEvents(events);
+  $("#status").textContent = "Updated " + new Date().toLocaleTimeString();
+}
+
+$("#go").addEventListener("click", load);
+$("#asset").addEventListener("change", (e) => { selected = e.target.value; load(); });
+try { const saved = localStorage.getItem("pi_api"); if (saved) $("#api").value = saved; } catch (_) {}
+$("#api").addEventListener("change", () => { try { localStorage.setItem("pi_api", $("#api").value); } catch (_) {} load(); });
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>
