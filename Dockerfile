@@ -1,22 +1,16 @@
-# DreamDEX bot worker — deploy via Railway template (see docs/railway.md).
-FROM node:20-bookworm-slim
+# PortalIndex hosted image: ingester + PostgREST in one container.
+ARG POSTGREST_TAG=latest
+FROM postgrest/postgrest:${POSTGREST_TAG} AS pgrst
 
+FROM node:20-slim
 WORKDIR /app
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY package.json package-lock.json tsconfig.base.json ./
-COPY packages packages
-COPY strategies strategies
-COPY advanced advanced
-COPY scripts scripts
-COPY dashboard dashboard
-COPY .env.railway .env
-
+COPY --from=pgrst /bin/postgrest /usr/local/bin/postgrest
+COPY package.json package-lock.json ./
 RUN npm ci
-
+COPY src ./src
+COPY sql ./sql
+COPY scripts ./scripts
+COPY start.sh ./start.sh
+RUN chmod +x start.sh
 ENV NODE_ENV=production
-
-CMD ["node", "scripts/railway-start.mjs"]
+CMD ["./start.sh"]
