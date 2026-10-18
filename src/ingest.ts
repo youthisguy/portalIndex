@@ -1,5 +1,6 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import pg from "pg";
+import { readdirSync, readFileSync } from "fs";
 import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
 
 const WS = process.env.WS_URL;
@@ -74,6 +75,28 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   console.log(`block ${n}: ${events.length} events`);
 }
 
+// Runs sql/NNN_*.sql in order. Every file is idempotent, so this is safe on each start.
+// Files that depend on pallets not being indexed are skipped with a warning.
+async function applyMigrations() {
+  let files: string[] = [];
+  try {
+    files = readdirSync("sql").filter((f) => /^\d{3}_.*\.sql$/.test(f)).sort();
+  } catch {
+    console.warn("No sql/ directory found; skipping migrations");
+    return;
+  }
+  for (const f of files) {
+    try {
+      await pool.query(readFileSync(`sql/${f}`, "utf8"));
+      console.log(`migration ok: ${f}`);
+    } catch (e: any) {
+      console.warn(`migration skipped: ${f} (${String(e.message).slice(0, 100)})`);
+    }
+  }
+  // Tell PostgREST to reload its schema cache so new tables and views get endpoints.
+  try { await pool.query("NOTIFY pgrst, 'reload schema'"); } catch {}
+}
+
 async function recordGap(chainKey: string, from: number, to: number, reason: string) {
   await pool.query(
     `INSERT INTO indexer_gaps (chain_key, from_block, to_block, reason) VALUES ($1,$2,$3,$4)`,
@@ -90,6 +113,7 @@ async function main() {
   await ensureTables(pool, typed);
   console.log(`Typed tables ready: ${typed.size} (pallets: ${PALLETS})`);
 
+  await applyMigrations();
   await pool.query(
     `CREATE TABLE IF NOT EXISTS indexer_gaps (
        id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
