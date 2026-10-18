@@ -41,6 +41,7 @@ Working:
 - Derived views: `asset_balances`, `asset_summary`, `nft_owners`, `nft_holdings`
 - Asset baseline snapshot from chain storage
 - Demo page (token holders, NFT owners, latest events)
+- Hosted read-only REST API on Render, with the ingester running in the same container
 - H160 <-> native account mapping check via `reviveApi`
 - Checkpoint contract (`contracts/PortalIndexCheckpoint.sol`), compiled; not yet deployed
 
@@ -49,7 +50,7 @@ Planned:
 - Address mapping table (H160 <-> SS58)
 - Per-era staking snapshots from chain storage
 - Rolling state hash anchored on-chain by the checkpoint contract
-- `pindex init` one-command setup and a hosted endpoint
+- `pindex init` one-command setup
 
 ## Quick start
 Requires Node 20+ and Docker.
@@ -89,6 +90,18 @@ REST API and shows labeled sample data if the API is empty or unreachable.
 Environment variables: `WS_URL` (required), `PALLETS`, `BACKFILL` (blocks to
 backfill on first run, default 200), `START_BLOCK`, `DATABASE_URL`,
 `SAFE_WINDOW` (blocks to resume behind the head after a gap, default 150).
+
+## Hosted testnet endpoint
+A read-only REST API for the Portaldot V3 testnet is hosted at
+https://portalindex-98f0.onrender.com
+The ingester and the API run together in one container (`Dockerfile`, `start.sh`).
+
+    curl "https://portalindex-98f0.onrender.com/indexer_cursor"
+    curl "https://portalindex-98f0.onrender.com/asset_balances"
+    curl "https://portalindex-98f0.onrender.com/events?order=block_number.desc&limit=5"
+    curl "https://portalindex-98f0.onrender.com/indexer_gaps"
+
+Large integers (token balances) are returned as JSON numbers; parse them as big integers.
 
 ## Findings about the Portaldot V3 testnet
 - The public node is pruned: state for old blocks is discarded, so history

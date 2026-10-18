@@ -30,4 +30,5 @@
 - Verified end to end on the live testnet: asset 2, one holder, 15000000000000000000 raw units, via REST.
 - PostgREST added for the REST API (read-only web_anon role). Demo page added in demo/index.html.
 - Docker restart policies set so containers survive Docker restarts.
-- Hosting research: Render free web services sleep after 15 minutes, free Postgres expires after 30 days, background workers have no free tier.
+- Started hosting on a Render account. One free web service now runs the ingester and PostgREST together (Dockerfile + start.sh); the ingester applies sql/ migrations on startup.
+- Hosted API: https://portalindex-98f0.onrender.com. Asset baseline snapshot taken at block 92525 (asset 2, one holder).
