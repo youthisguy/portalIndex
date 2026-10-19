@@ -41,8 +41,9 @@ const knownAccounts = new Set<string>();
 
 // Best effort, never fails a block: store each touched account's H160 (once) and its
 // native balance (every time it is touched). `q` is the query namespace to read from.
-async function mapAccounts(api: ApiPromise, accounts: string[], blockNum: number, q: any = api.query) {
+async function mapAccounts(api: ApiPromise, accounts: string[], blockNum: number, q: any = api.query, delayMs = 0) {
   for (const a of accounts) {
+    if (delayMs) await sleep(delayMs);
     try {
       const info: any = await q.system.account(a);
       await pool.query(
@@ -66,7 +67,7 @@ async function seedAccounts(api: ApiPromise) {
     "SELECT DISTINCT account FROM account_events WHERE account NOT IN (SELECT account FROM account_balances) LIMIT 400"
   );
   const head = (await api.rpc.chain.getHeader(await api.rpc.chain.getFinalizedHead())).number.toNumber();
-  await mapAccounts(api, r.rows.map((x: any) => x.account), head);
+  await mapAccounts(api, r.rows.map((x: any) => x.account), head, api.query, 100);
   console.log(`seeded balances for ${r.rows.length} accounts`);
 }
 
@@ -169,9 +170,17 @@ async function main() {
   console.log(`Starting at block ${next}`);
 
   const failures = new Map<number, number>();
+  let lastHeadAt = Date.now();
+  setInterval(() => {
+    if (Date.now() - lastHeadAt > 5 * 60 * 1000) {
+      console.error("No finalized head for 5 minutes; exiting so the supervisor reconnects");
+      process.exit(1);
+    }
+  }, 60_000);
   let running = false;
   // Finalized heads only: finalized blocks cannot be reorged.
   await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
+    lastHeadAt = Date.now();
     if (running) return; // a catch-up loop is already working
     running = true;
     try {
@@ -191,6 +200,7 @@ async function main() {
             next = resume;
           } else {
             // A block that keeps failing must not stall the indexer forever.
+            if (/disconnected|abnormal closure|econn|timeout|websocket|not connected/i.test(msg)) throw e; // transient: retry, never skip
             const tries = (failures.get(next) ?? 0) + 1;
             failures.set(next, tries);
             if (tries >= 3) {
