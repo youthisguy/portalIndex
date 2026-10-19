@@ -150,6 +150,7 @@ async function main() {
   }
   console.log(`Starting at block ${next}`);
 
+  const failures = new Map<number, number>();
   let running = false;
   // Finalized heads only: finalized blocks cannot be reorged.
   await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
@@ -171,7 +172,17 @@ async function main() {
             console.warn(`GAP: blocks ${next}-${resume - 1} unavailable (pruned). Resuming at ${resume}.`);
             next = resume;
           } else {
-            throw e;
+            // A block that keeps failing must not stall the indexer forever.
+            const tries = (failures.get(next) ?? 0) + 1;
+            failures.set(next, tries);
+            if (tries >= 3) {
+              await recordGap(chainKey, next, next, "processing error: " + msg.slice(0, 120));
+              console.warn(`SKIP: block ${next} failed ${tries} times (${msg.slice(0, 80)}); recorded as a gap`);
+              failures.delete(next);
+              next++;
+            } else {
+              throw e;
+            }
           }
         }
       }

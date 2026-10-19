@@ -89,8 +89,12 @@ export async function ensureTables(pool: Pool, map: Map<string, EventTable>) {
   }
 }
 
-function convert(v: any, kind: Kind): unknown {
-  if (v && typeof v.isNone === "boolean") return v.isNone ? null : convert(v.unwrap(), kind);
+// An Option has isNone AND unwrap. Enums with a variant named "None" (like staking's
+// RewardDestination) also have isNone but are not Options, so check for unwrap too.
+const isOption = (v: any) => v && typeof v.isNone === "boolean" && typeof v.unwrap === "function";
+
+export function convert(v: any, kind: Kind): unknown {
+  if (isOption(v)) return v.isNone ? null : convert(v.unwrap(), kind);
   switch (kind) {
     case "text":
       return typeof v.toRawType === "function" && v.toRawType() === "Bytes" ? v.toHex() : v.toString();
@@ -132,7 +136,7 @@ export async function insertTyped(
   for (const c of t.cols) {
     if (!c.account) continue;
     const v = event.data[c.index];
-    const val = v && typeof v.isNone === "boolean" ? (v.isNone ? null : v.unwrap().toString()) : v?.toString();
+    const val = isOption(v) ? (v.isNone ? null : v.unwrap().toString()) : v?.toString();
     if (val) accounts.add(val);
   }
   for (const a of accounts) {
