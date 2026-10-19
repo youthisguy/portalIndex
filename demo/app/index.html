@@ -129,6 +129,7 @@ user-select: none;
 .stats strong{font-size:1.6rem;font-variant-numeric:tabular-nums;font-weight:600}
 .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .foot a{color:var(--muted)}
+.ev.tr{grid-template-columns:90px minmax(0,270px) minmax(0,1fr)}
 /* Developer Accordion */
 details.dev-area {
 margin-top: 36px;
@@ -155,6 +156,7 @@ flex-wrap: wrap;
 @media (max-width:640px){
 .row{flex-wrap:wrap}
 .ev{grid-template-columns:70px minmax(0,1fr)}
+.ev.tr{grid-template-columns:70px minmax(0,1fr)}
 .ev code{grid-column:1/-1}
 main{padding:16px 12px 48px}
 }
@@ -213,6 +215,11 @@ main{padding:16px 12px 48px}
     </section>
   </div>
 
+  <section aria-labelledby="h-tr" class="card" style="margin-top:20px">
+    <h2 id="h-tr">Latest transfers</h2>
+    <div id="transfers" class="events"></div>
+  </section>
+
   <!-- Latest Events -->
   <section aria-labelledby="h-ev" class="card" style="margin-top:20px">
     <h2 id="h-ev">Latest events</h2>
@@ -238,6 +245,7 @@ const $ = (s) => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const short = (a) => (a && a.length > 16 ? a.slice(0, 6) + "…" + a.slice(-6) : a || "");
 const fmt = (s) => String(s).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const tpot = (raw) => { const d = 10n ** 14n, b = BigInt(raw); const f = (b % d).toString().padStart(14, "0").slice(0, 4).replace(/0+$/, ""); return fmt(b / d) + (f ? "." + f : "") + " tPOT"; };
 const hue = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 let selected = null;
 let firstLoad = true;
@@ -263,7 +271,7 @@ const SAMPLE = {
 async function get(base, path) {
   const r = await fetch(base + path);
   if (!r.ok) throw new Error("HTTP " + r.status);
-  const t = (await r.text()).replace(/"(balance|total_held)":(-?\d+)/g, '"$1":"$2"');
+  const t = (await r.text()).replace(/"(balance|total_held|amount|free|reserved)":(-?\d+)/g, '"$1":"$2"');
   return JSON.parse(t);
 }
 
@@ -400,6 +408,21 @@ async function load() {
   try { await showAsset(base, selected, sample); } catch (e) { renderHolders([]); }
   renderNfts(nfts); renderEvents(events);
   loadStats(base);
+  loadTransfers(base);
+}
+
+async function loadTransfers(base) {
+  const box = $("#transfers");
+  try {
+    const list = await get(base, "/balances_transfer?order=block_number.desc,event_index.desc&limit=10");
+    box.replaceChildren();
+    if (!list.length) { box.append(el("div", "empty", "No transfers indexed yet.")); return; }
+    list.forEach((t) => {
+      const row = el("div", "ev tr");
+      row.append(el("span", "mono", "#" + t.block_number), el("span", "mono", short(t.from) + " → " + short(t.to)), el("code", null, tpot(t.amount)));
+      box.append(row);
+    });
+  } catch (e) { box.replaceChildren(el("div", "empty", "Transfers unavailable right now.")); }
 }
 
 const total = (r) => { const m = /\/(\d+)$/.exec(r.headers.get("content-range") || ""); return m ? fmt(m[1]) : "n/a"; };
@@ -422,7 +445,7 @@ async function loadStats(base) {
     $("#c-events").textContent = total(ev);
     $("#c-assets").textContent = total(as);
     $("#c-nfts").textContent = total(nf);
-    $("#m-gaps").textContent = total(gp);
+    const g = $("#m-gaps"); if (g) g.textContent = total(gp);
   } catch (_) { /* stats are optional */ }
 }
 
@@ -448,10 +471,11 @@ async function lookup() {
       if (m.length) h160 = m[0].h160;
     }
     const q = encodeURIComponent(a);
-    const [bal, nft, evs] = await Promise.all([
+    const [bal, nft, evs, nb] = await Promise.all([
       get(base, `/asset_balances?holder=eq.${q}`),
       get(base, `/nft_owners?owner=eq.${q}`),
       get(base, `/account_events?account=eq.${q}&order=block_number.desc&limit=15`),
+      get(base, `/account_balances?account=eq.${q}`).catch(() => []),
     ]);
     
     const headerWrap = el("div", null);
@@ -473,7 +497,8 @@ async function lookup() {
     headerWrap.append(addrsRow);
     out.append(headerWrap);
 
-    if (!bal.length && !nft.length && !evs.length) return say("Nothing indexed for this address yet.");
+    if (nb.length) { const nr = el("div", "row"); nr.style.marginBottom = "12px"; nr.append(el("span", null, "Native balance"), el("span", "num", tpot(nb[0].free))); out.append(nr); }
+    if (!nb.length && !bal.length && !nft.length && !evs.length) return say("Nothing indexed for this address yet. Addresses appear once they take part in an indexed event.");
     
     const rows = el("div", "rows");
     rows.style.marginBottom = "16px";
