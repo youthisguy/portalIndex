@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="c18b3372-1b8b-4adc-b3ca-cbec6bb803be"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pindex Explorer</title>
@@ -100,20 +101,22 @@ code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9em; }
 
 /* Events Feed */
 .events{display:grid;gap:8px}
-.ev{display:grid;grid-template-columns:90px 180px 1fr;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:0.9rem}
-.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85em}
+.ev{display:grid;grid-template-columns:90px minmax(0,180px) minmax(0,1fr);gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:0.9rem;overflow:hidden}
+.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85em;min-width:0}
+
 
 /* Empty & Skeleton States */
 .empty{color:var(--muted);padding:24px 12px;text-align:center;font-size:0.95rem;background:var(--code-bg);border-radius:8px;border:1px dashed var(--line)}
 .skeleton {
-  background: linear-gradient(90deg, var(--line) 25%, var(--code-bg) 50%, var(--line) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 6px;
-  color: transparent !important;
-  user-select: none;
+background: linear-gradient(90deg, var(--line) 25%, var(--code-bg) 50%, var(--line) 75%);
+background-size: 200% 100%;
+animation: shimmer 1.5s infinite;
+border-radius: 6px;
+color: transparent !important;
+user-select: none;
 }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
 
 .nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px}
 .nav .brand{font-weight:700;font-size:1.15rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
@@ -128,31 +131,32 @@ code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9em; }
 .foot a{color:var(--muted)}
 /* Developer Accordion */
 details.dev-area {
-  margin-top: 36px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-card);
-  padding: 12px 16px;
+margin-top: 36px;
+border: 1px solid var(--line);
+border-radius: 8px;
+background: var(--surface-card);
+padding: 12px 16px;
 }
 details.dev-area summary {
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--muted);
-  font-size: 0.9rem;
+cursor: pointer;
+font-weight: 500;
+color: var(--muted);
+font-size: 0.9rem;
 }
 .dev-content {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+margin-top: 12px;
+display: flex;
+gap: 10px;
+align-items: center;
+flex-wrap: wrap;
 }
 
+
 @media (max-width:640px){
-  .row{flex-wrap:wrap}
-  .ev{grid-template-columns:70px 1fr}
-  .ev code{grid-column:1/-1}
-  main{padding:16px 12px 48px}
+.row{flex-wrap:wrap}
+.ev{grid-template-columns:70px minmax(0,1fr)}
+.ev code{grid-column:1/-1}
+main{padding:16px 12px 48px}
 }
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none !important; }

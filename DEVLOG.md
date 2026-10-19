@@ -34,3 +34,6 @@
 - Hosted API: https://portalindex-98f0.onrender.com. Asset baseline snapshot taken at block 92525 (asset 2, one holder).
 - Demo page deployed as a Render static site: https://pindex.onrender.com/ (reads the hosted API; ?api= overrides the API address).
 - Hosted API verified: asset 2 with its holder via REST, indexer_gaps empty, cursor advancing with the chain.
+
+## 2026-10-19
+- Ingester stalled 12 h on a staking.Rewarded event (RewardDestination enum has a None variant); fixed Option detection and added poison-block skipping.
