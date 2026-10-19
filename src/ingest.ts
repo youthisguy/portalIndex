@@ -39,18 +39,35 @@ function eventData(event: any): Record<string, unknown> {
 
 const knownAccounts = new Set<string>();
 
-// Best effort: ask the runtime for each account's H160 and store both forms.
-async function mapAccounts(api: ApiPromise, accounts: string[]) {
+// Best effort, never fails a block: store each touched account's H160 (once) and its
+// native balance (every time it is touched). `q` is the query namespace to read from.
+async function mapAccounts(api: ApiPromise, accounts: string[], blockNum: number, q: any = api.query) {
   for (const a of accounts) {
+    try {
+      const info: any = await q.system.account(a);
+      await pool.query(
+        `INSERT INTO account_balances (account, free, reserved, block) VALUES ($1,$2,$3,$4)
+         ON CONFLICT (account) DO UPDATE SET free = $2, reserved = $3, block = $4, updated_at = now()`,
+        [a, info.data.free.toString(), info.data.reserved.toString(), blockNum]
+      );
+    } catch { /* optional */ }
     if (knownAccounts.has(a)) continue;
     try {
       const h160 = (await (api.call as any).reviveApi.address(a)).toString().toLowerCase();
       await pool.query("INSERT INTO address_map (account, h160) VALUES ($1,$2) ON CONFLICT (account) DO NOTHING", [a, h160]);
       knownAccounts.add(a);
-    } catch {
-      /* mapping is optional; never fail a block over it */
-    }
+    } catch { /* optional */ }
   }
+}
+
+// On startup, fetch balances for accounts that have events but no balance yet.
+async function seedAccounts(api: ApiPromise) {
+  const r = await pool.query(
+    "SELECT DISTINCT account FROM account_events WHERE account NOT IN (SELECT account FROM account_balances) LIMIT 400"
+  );
+  const head = (await api.rpc.chain.getHeader(await api.rpc.chain.getFinalizedHead())).number.toNumber();
+  await mapAccounts(api, r.rows.map((x: any) => x.account), head);
+  console.log(`seeded balances for ${r.rows.length} accounts`);
 }
 
 async function processBlock(api: ApiPromise, chainKey: string, n: number, typed: Map<string, EventTable>) {
@@ -89,7 +106,7 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   } finally {
     client.release();
   }
-  await mapAccounts(api, [...touched]);
+  await mapAccounts(api, [...touched], n, apiAt.query);
   console.log(`block ${n}: ${events.length} events`);
 }
 
@@ -132,6 +149,7 @@ async function main() {
   console.log(`Typed tables ready: ${typed.size} (pallets: ${PALLETS})`);
 
   await applyMigrations();
+  seedAccounts(api).catch((e) => console.warn("seeding skipped:", String(e.message).slice(0, 80)));
   await pool.query(
     `CREATE TABLE IF NOT EXISTS indexer_gaps (
        id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
