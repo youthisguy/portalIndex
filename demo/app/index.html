@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pindex Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #0a0a0b;
+  --surface: #111113;
+  --surface-card: #121214;
+  --ink: #f4f5f7;
+  --muted: #9a9fab;
+  --line: #26272c;
+  --bar: #26272c;
+  --bar-top: #4c8dff;
+  --field: #0e0e10;
+  --notice-bg: #2a150c;
+  --notice-border: #f97316;
+  --notice-ink: #fdba74;
+  --code-bg: #0d0d0f;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Instrument Sans",system-ui,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 64px}
+
+/* Top bar / Navbar styling similar to reference explorer */
+.top-meta{display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;color:var(--muted);padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:10px;}
+.top-meta span{display:inline-flex;gap:6px;align-items:center;}
+.top-meta b{color:var(--ink);font-weight:600;}
+
+h1{font-size:clamp(1.5rem,3vw,2.2rem);line-height:1.1;margin:0 0 6px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.15rem;margin:0 0 12px;font-weight:600;letter-spacing:-.01em}
+p.sub{margin:0 0 20px;color:var(--muted);max-width:44em;font-size:0.92rem}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Controls & Inputs */
+input,select,button{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 14px;transition:border-color 0.15s, box-shadow 0.15s}
+input{min-width:min(100%,320px);flex-grow:1}
+button{cursor:pointer;font-weight:600;background:var(--surface);white-space:nowrap}
+button:hover{border-color:var(--muted)}
+button.primary{background:#2f6feb;color:#fff;border-color:transparent}
+button.primary:hover{opacity:0.9}
+:focus-visible{outline:2px solid var(--bar-top);outline-offset:2px}
+
+/* Notice Banner */
+#notice{margin:0 0 24px;padding:12px 16px;border-left:4px solid var(--notice-border);background:var(--notice-bg);color:var(--notice-ink);border-radius:0 8px 8px 0;font-weight:500;display:none;font-size:0.95rem}
+
+/* Main Lookup Section styled like search header */
+.lookup-card{background:var(--surface-card);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:28px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.2)}
+.lookup-bar{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Address Styling & Copy */
+code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9em; }
+.addr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  background: var(--code-bg);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  font-size: 0.85em;
+}
+.copy-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--muted);
+  border-radius: 4px;
+}
+.copy-btn:hover { color: var(--ink); background: var(--line); }
+
+/* Layout Grid & Cards */
+.grid{display:grid;gap:20px;grid-template-columns:1fr}
+@media (min-width:900px){.grid{grid-template-columns:1.2fr 1fr}}
+.card{background:var(--surface-card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
+
+/* Holder Rows */
+.rows{display:grid;gap:8px}
+.row{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;overflow:hidden;background:var(--code-bg);border:1px solid var(--line)}
+.row i{position:absolute;inset:0 auto 0 0;background:var(--bar);z-index:0;opacity:0.6}
+.row:first-child i{background:var(--bar-top);opacity:0.25}
+.row span{position:relative;z-index:1;white-space:nowrap}
+.row .who{overflow:hidden;text-overflow:ellipsis;flex-shrink:1}
+.row .num{font-variant-numeric:tabular-nums;font-weight:600;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.row small{color:var(--muted);font-size:0.75rem;font-weight:400}
+
+/* NFT Tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{padding:12px;border-radius:8px;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);background:var(--code-bg)}
+.tile b{font-size:1.2rem;line-height:1;font-family:"JetBrains Mono", monospace}
+.tile small{color:var(--muted);font-size:0.78rem;overflow:hidden;text-overflow:ellipsis}
+
+/* Events Feed */
+.events{display:grid;gap:8px}
+.ev{display:grid;grid-template-columns:90px 180px 1fr;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:0.9rem}
+.ev code{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85em}
+
+/* Empty & Skeleton States */
+.empty{color:var(--muted);padding:24px 12px;text-align:center;font-size:0.95rem;background:var(--code-bg);border-radius:8px;border:1px dashed var(--line)}
+.skeleton {
+  background: linear-gradient(90deg, var(--line) 25%, var(--code-bg) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+  color: transparent !important;
+  user-select: none;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.nav .brand{font-weight:700;font-size:1.15rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.nav .navlinks{display:flex;gap:20px;font-size:.92rem}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover{color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.stats div{background:var(--surface-card);padding:16px 18px}
+.stats small{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+.stats strong{font-size:1.6rem;font-variant-numeric:tabular-nums;font-weight:600}
+.foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot a{color:var(--muted)}
+/* Developer Accordion */
+details.dev-area {
+  margin-top: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-card);
+  padding: 12px 16px;
+}
+details.dev-area summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.dev-content {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width:640px){
+  .row{flex-wrap:wrap}
+  .ev{grid-template-columns:70px 1fr}
+  .ev code{grid-column:1/-1}
+  main{padding:16px 12px 48px}
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top-meta" role="status">
+    <span>Portaldot V3 testnet</span>
+    <!-- <span>Data gaps <b id="m-gaps">…</b></span> -->
+    <span>Updated <b id="m-age">…</b></span>
+  </div>
+
+
+  <header style="margin-bottom: 24px;">
+    <h1>Search the Portaldot testnet</h1>
+    <p class="sub">Addresses, token holders, NFT owners and events, indexed by Pindex.</p>
+  </header>
+
+  <div id="notice" role="status"></div>
+
+  <!-- Primary Action: Address Lookup -->
+  <section aria-labelledby="h-look" class="lookup-card">
+    <h2 id="h-look">Look up an address</h2>
+    <p class="sub" style="margin-bottom: 14px;">Inspect balances, NFTs, and on-chain activity for any Substrate or EVM address.</p>
+    <div class="lookup-bar">
+      <input id="addr" placeholder="Search by address, e.g. 5… or 0x…" aria-label="Address">
+      <button id="find" class="primary">Look up</button>
+    </div>
+    <div id="look" style="margin-top: 16px;"></div>
+  </section>
+
+  <section class="stats" aria-label="Index status">
+    <div><small>Latest block</small><strong id="c-block">…</strong></div>
+    <div><small>Events stored</small><strong id="c-events">…</strong></div>
+    <div><small>Assets tracked</small><strong id="c-assets">…</strong></div>
+    <div><small>NFT items</small><strong id="c-nfts">…</strong></div>
+  </section>
+
+  <!-- Core Data Grid -->
+  <div class="grid">
+    <section aria-labelledby="h-holders" class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h2 id="h-holders" style="margin:0">Token holders</h2>
+        <select id="asset" aria-label="Asset" style="min-width: 160px;"></select>
+      </div>
+      <div id="holders" class="rows"></div>
+    </section>
+
+    <section aria-labelledby="h-nft" class="card">
+      <h2 id="h-nft">NFT owners</h2>
+      <div id="nfts" class="tiles"></div>
+    </section>
+  </div>
+
+  <!-- Latest Events -->
+  <section aria-labelledby="h-ev" class="card" style="margin-top:20px">
+    <h2 id="h-ev">Latest events</h2>
+    <div id="events" class="events"></div>
+  </section>
+
+  <!-- Developer Settings (Collapsed) -->
+  <details class="dev-area" id="dev">
+    <summary>Developer options &amp; API endpoint</summary>
+    <div class="dev-content">
+      <label for="api" style="font-size: 0.85rem; color: var(--muted);">API address</label>
+      <input id="api" value="https://portalindex-98f0.onrender.com" aria-label="API address">
+      <button id="go">Refresh now</button>
+    </div>
+  </details>
+  <footer class="foot">
+    <span><a href="https://github.com/youthisguy/portalIndex">GitHub</a></span>
+  </footer>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const short = (a) => (a && a.length > 16 ? a.slice(0, 6) + "…" + a.slice(-6) : a || "");
+const fmt = (s) => String(s).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const hue = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+let selected = null;
+let firstLoad = true;
+
+const SAMPLE = {
+  summary: [{ asset_id: 7, holders: 5, total_held: "2500000000000000" }],
+  balances: { 7: [
+    { holder: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV", balance: "1200000000000000" },
+    { holder: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty", balance: "600000000000000" },
+    { holder: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y", balance: "400000000000000" },
+    { holder: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", balance: "200000000000000" },
+    { holder: "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw", balance: "100000000000000" } ] },
+  nfts: [
+    { pallet: "nfts", collection: 1, item: 1, owner: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV" },
+    { pallet: "nfts", collection: 1, item: 2, owner: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" },
+    { pallet: "nfts", collection: 1, item: 3, owner: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" },
+    { pallet: "uniques", collection: 9, item: 1, owner: "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y" } ],
+  events: [
+    { block_number: 71400, pallet: "nfts", name: "Issued", data: { collection: "1", item: "3", owner: "5Dm4Yz9Znw6qKqpVdZSVxPVm3JzXG6MNsfpz5h2qqNWw2cuV" } },
+    { block_number: 71398, pallet: "assets", name: "Transferred", data: { asset_id: "7", amount: "100000000000000" } } ],
+};
+
+async function get(base, path) {
+  const r = await fetch(base + path);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const t = (await r.text()).replace(/"(balance|total_held)":(-?\d+)/g, '"$1":"$2"');
+  return JSON.parse(t);
+}
+
+function makeAddressElement(address) {
+  const container = el("span", "addr-pill");
+  const textSpan = el("span", null, short(address));
+  container.title = address;
+  const copyBtn = el("button", "copy-btn", "Copy");
+  copyBtn.title = "Copy full address";
+  copyBtn.type = "button";
+  copyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(address).then(() => {
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+    }).catch(() => {});
+  });
+  container.append(textSpan, copyBtn);
+  return container;
+}
+
+function renderSkeletons() {
+  const hBox = $("#holders"); hBox.replaceChildren();
+  for (let i = 0; i < 3; i++) {
+    const r = el("div", "row skeleton");
+    r.append(el("span", null, "Loading holder…"), el("span", null, "000,000"));
+    hBox.append(r);
+  }
+  const nBox = $("#nfts"); nBox.replaceChildren();
+  for (let i = 0; i < 2; i++) {
+    const t = el("div", "tile skeleton");
+    t.append(el("b", null, "#0"), el("small", null, "Loading NFT…"));
+    nBox.append(t);
+  }
+  const eBox = $("#events"); eBox.replaceChildren();
+  for (let i = 0; i < 2; i++) {
+    const ev = el("div", "ev skeleton");
+    ev.append(el("span", null, "#00000"), el("span", null, "pallet.Event"), el("code", null, "loading data..."));
+    eBox.append(ev);
+  }
+}
+
+function renderHolders(list) {
+  const box = $("#holders"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No holders found for this asset.")); return; }
+  const total = list.reduce((a, r) => a + BigInt(r.balance), 0n) || 1n;
+  list.forEach((r) => {
+    const pct = Number((BigInt(r.balance) * 10000n) / total) / 100;
+    const row = el("div", "row");
+    const bar = el("i"); bar.style.width = pct + "%";
+    const who = makeAddressElement(r.holder);
+    const num = el("span", "num");
+    const valText = fmt(r.balance);
+    num.append(el("span", null, valText), el("small", null, pct.toFixed(1) + "% · raw units"));
+    row.append(bar, who, num); box.append(row);
+  });
+}
+
+function renderNfts(list) {
+  const box = $("#nfts"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No NFTs found.")); return; }
+  list.forEach((n) => {
+    const t = el("div", "tile");
+    t.style.background = `hsl(${hue(n.pallet + n.collection)} 55% 55% / .12)`;
+    const topRow = el("div", null);
+    topRow.append(el("b", null, "#" + n.item));
+    const meta = el("small", null, n.pallet + " · col " + n.collection);
+    const ownerEl = el("small", "mono", short(n.owner));
+    ownerEl.title = n.owner;
+    t.append(topRow, meta, ownerEl);
+    t.title = "Owner: " + n.owner;
+    box.append(t);
+  });
+}
+
+function renderEvents(list) {
+  const box = $("#events"); box.replaceChildren();
+  if (!list.length) { box.append(el("div", "empty", "No events indexed yet.")); return; }
+  list.forEach((e) => {
+    const row = el("div", "ev");
+    const d = JSON.stringify(e.data); 
+    const blockSpan = el("span", "mono", "#" + e.block_number);
+    const nameSpan = el("span", "mono", e.pallet + "." + e.name);
+    const codeSpan = el("code", null, d.length > 120 ? d.slice(0, 120) + "…" : d);
+    codeSpan.title = d;
+    row.append(blockSpan, nameSpan, codeSpan);
+    box.append(row);
+  });
+}
+
+function notice(msg) {
+  const n = $("#notice");
+  if (msg) {
+    n.textContent = "Sample data, not from the chain: " + msg;
+    n.style.display = "block";
+  } else {
+    n.style.display = "none";
+    n.textContent = "";
+  }
+}
+
+async function showAsset(base, id, sample) {
+  const list = sample ? (SAMPLE.balances[id] || []) : await get(base, `/asset_balances?asset_id=eq.${id}&order=balance.desc&limit=10`);
+  renderHolders(list);
+}
+
+async function load() {
+  const base = $("#api").value.replace(/\/$/, "");
+  if (firstLoad) { renderSkeletons(); firstLoad = false; }
+  let summary, nfts, events, sample = false, reason = "";
+  try {
+    [summary, nfts, events] = await Promise.all([
+      get(base, "/asset_summary?order=total_held.desc&limit=20"),
+      get(base, "/nft_owners?limit=48"),
+      get(base, "/events?name=neq.ExtrinsicSuccess&order=block_number.desc&limit=12"),
+    ]);
+    if (!summary.length && !nfts.length) { sample = true; reason = "No assets or NFTs are indexed yet."; }
+  } catch (e) {
+    sample = true; reason = "Can't reach the API at " + base + " (" + e.message + "). Check that PostgREST is running.";
+    [summary, nfts, events] = [SAMPLE.summary, SAMPLE.nfts, SAMPLE.events];
+  }
+  if (sample) { summary = SAMPLE.summary; nfts = SAMPLE.nfts; if (!events || !events.length) events = SAMPLE.events; }
+  notice(reason);
+  
+  const sel = $("#asset"); const keep = selected;
+  const key = summary.map((s) => s.asset_id + ":" + s.holders).join(",");
+  if (sel.dataset.key !== key) {
+    sel.replaceChildren();
+    summary.forEach((s) => { const o = el("option", null, `Asset ${s.asset_id} (${s.holders} holders)`); o.value = s.asset_id; sel.append(o); });
+    sel.dataset.key = key;
+    if (keep && summary.some((s) => String(s.asset_id) === String(keep))) sel.value = keep;
+  }
+  selected = sel.value;
+  try { await showAsset(base, selected, sample); } catch (e) { renderHolders([]); }
+  renderNfts(nfts); renderEvents(events);
+  loadStats(base);
+}
+
+const total = (r) => { const m = /\/(\d+)$/.exec(r.headers.get("content-range") || ""); return m ? fmt(m[1]) : "n/a"; };
+function ago(iso) {
+  const n = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  return n < 90 ? n + " s ago" : n < 5400 ? Math.round(n / 60) + " min ago" : Math.round(n / 3600) + " h ago";
+}
+async function loadStats(base) {
+  try {
+    const h = { headers: { Prefer: "count=exact" } };
+    const [cur, ev, as, nf, gp] = await Promise.all([
+      fetch(base + "/indexer_cursor?select=last_block,updated_at").then((r) => r.json()),
+      fetch(base + "/events?select=block_number&limit=1", h),
+      fetch(base + "/asset_summary?select=asset_id&limit=1", h),
+      fetch(base + "/nft_owners?select=item&limit=1", h),
+      fetch(base + "/indexer_gaps?select=id&limit=1", h),
+    ]);
+    $("#c-block").textContent = cur[0] ? fmt(cur[0].last_block) : "n/a";
+    $("#m-age").textContent = cur[0] ? ago(cur[0].updated_at) : "n/a";
+    $("#c-events").textContent = total(ev);
+    $("#c-assets").textContent = total(as);
+    $("#c-nfts").textContent = total(nf);
+    $("#m-gaps").textContent = total(gp);
+  } catch (_) { /* stats are optional */ }
+}
+
+$("#go").addEventListener("click", load);
+$("#asset").addEventListener("change", (e) => { selected = e.target.value; load(); });
+try { const saved = localStorage.getItem("pi_api"); if (saved) $("#api").value = saved; } catch (_) {}
+const qApi = new URLSearchParams(location.search).get("api"); if (qApi) $("#api").value = qApi;
+$("#api").addEventListener("change", () => { try { localStorage.setItem("pi_api", $("#api").value); } catch (_) {} load(); });
+
+async function lookup() {
+  const base = $("#api").value.replace(/\/$/, "");
+  let a = $("#addr").value.trim(); const out = $("#look"); out.replaceChildren();
+  if (!a) return;
+  const say = (m) => out.append(el("div", "empty", m));
+  try {
+    let h160 = "";
+    if (/^0x[0-9a-fA-F]{40}$/.test(a)) {
+      const m = await get(base, `/address_map?h160=eq.${a.toLowerCase()}`);
+      if (!m.length) return say("No activity has been indexed for that 0x address yet.");
+      h160 = a.toLowerCase(); a = m[0].account;
+    } else {
+      const m = await get(base, `/address_map?account=eq.${encodeURIComponent(a)}`);
+      if (m.length) h160 = m[0].h160;
+    }
+    const q = encodeURIComponent(a);
+    const [bal, nft, evs] = await Promise.all([
+      get(base, `/asset_balances?holder=eq.${q}`),
+      get(base, `/nft_owners?owner=eq.${q}`),
+      get(base, `/account_events?account=eq.${q}&order=block_number.desc&limit=15`),
+    ]);
+    
+    const headerWrap = el("div", null);
+    headerWrap.style.marginBottom = "16px";
+    headerWrap.style.display = "flex";
+    headerWrap.style.flexDirection = "column";
+    headerWrap.style.gap = "8px";
+    
+    const subText = el("div", "sub", "Addresses found:");
+    subText.style.marginBottom = "0";
+    headerWrap.append(subText);
+    
+    const addrsRow = el("div", null);
+    addrsRow.style.display = "flex";
+    addrsRow.style.gap = "8px";
+    addrsRow.style.flexWrap = "wrap";
+    addrsRow.append(makeAddressElement(a));
+    if (h160) addrsRow.append(makeAddressElement(h160));
+    headerWrap.append(addrsRow);
+    out.append(headerWrap);
+
+    if (!bal.length && !nft.length && !evs.length) return say("Nothing indexed for this address yet.");
+    
+    const rows = el("div", "rows");
+    rows.style.marginBottom = "16px";
+    bal.forEach((b) => { 
+      const r = el("div", "row"); 
+      r.append(el("span", null, "Asset " + b.asset_id), el("span", "num", fmt(b.balance))); 
+      rows.append(r); 
+    });
+    nft.forEach((n) => { 
+      const r = el("div", "row"); 
+      r.append(el("span", null, `${n.pallet} collection ${n.collection} #${n.item}`), el("span", "num", "NFT")); 
+      rows.append(r); 
+    });
+    if (bal.length || nft.length) out.append(rows);
+
+    if (evs.length) {
+      const evTitle = el("h3", null, "Account Events");
+      evTitle.style.fontSize = "1rem";
+      evTitle.style.margin = "0 0 8px 0";
+      out.append(evTitle);
+      const evsContainer = el("div", "events");
+      evs.forEach((e) => { 
+        const r = el("div", "ev"); 
+        r.append(el("span", "mono", "#" + e.block_number), el("span", "mono", e.pallet + "." + e.name)); 
+        evsContainer.append(r); 
+      });
+      out.append(evsContainer);
+    }
+  } catch (e) { say("Lookup failed: " + e.message); }
+}
+$("#find").addEventListener("click", lookup);
+$("#addr").addEventListener("keydown", (e) => { if (e.key === "Enter") lookup(); });
+load(); setInterval(load, 15000);
+</script>
+</body>
+</html>

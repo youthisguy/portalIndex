@@ -84,7 +84,7 @@ Try it:
     curl "http://localhost:3000/asset_balances?order=balance.desc"
     curl "http://localhost:3000/nft_owners?limit=20"
 
-Open `demo/index.html` in a browser for the holders and NFT demo. It reads the
+Open `demo/app/index.html` in a browser for the holders and NFT demo. It reads the
 REST API and shows labeled sample data if the API is empty or unreachable.
 
 Environment variables: `WS_URL` (required), `PALLETS`, `BACKFILL` (blocks to
@@ -95,6 +95,8 @@ backfill on first run, default 200), `START_BLOCK`, `DATABASE_URL`,
 A read-only REST API for the Portaldot V3 testnet is hosted at
 https://portalindex-98f0.onrender.com
 The ingester and the API run together in one container (`Dockerfile`, `start.sh`).
+
+Live demo page: https://pindex.onrender.com/ (reads the hosted API).
 
     curl "https://portalindex-98f0.onrender.com/indexer_cursor"
     curl "https://portalindex-98f0.onrender.com/asset_balances"
