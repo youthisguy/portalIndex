@@ -61,6 +61,34 @@ async function mapAccounts(api: ApiPromise, accounts: string[], blockNum: number
   }
 }
 
+// Reads every native balance from chain storage at the finalized head and stores it,
+// so the tPOT holder list is complete (not just accounts seen in events).
+async function syncNativeBalances(api: ApiPromise) {
+  const hash = await api.rpc.chain.getFinalizedHead();
+  const block = (await api.rpc.chain.getHeader(hash)).number.toNumber();
+  const at: any = await api.at(hash);
+  let startKey: string | undefined;
+  let total = 0;
+  for (;;) {
+    const page: any[] = await at.query.system.account.entriesPaged({ pageSize: 200, startKey });
+    if (!page.length) break;
+    const acc: string[] = [], free: string[] = [], res: string[] = [];
+    for (const [k, v] of page) { acc.push(k.args[0].toString()); free.push(v.data.free.toString()); res.push(v.data.reserved.toString()); }
+    await pool.query(
+      `INSERT INTO account_balances (account, free, reserved, block)
+       SELECT a, f, r, $4::bigint FROM unnest($1::text[], $2::numeric[], $3::numeric[]) AS t(a, f, r)
+       ON CONFLICT (account) DO UPDATE
+         SET free = EXCLUDED.free, reserved = EXCLUDED.reserved, block = EXCLUDED.block, updated_at = now()
+         WHERE account_balances.block <= EXCLUDED.block`,
+      [acc, free, res, block]
+    );
+    total += page.length;
+    startKey = page[page.length - 1][0].toHex();
+    await sleep(100);
+  }
+  console.log(`native balances synced: ${total} accounts at block ${block}`);
+}
+
 // On startup, fetch balances for accounts that have events but no balance yet.
 async function seedAccounts(api: ApiPromise) {
   const r = await pool.query(
@@ -151,6 +179,8 @@ async function main() {
 
   await applyMigrations();
   seedAccounts(api).catch((e) => console.warn("seeding skipped:", String(e.message).slice(0, 80)));
+  syncNativeBalances(api).catch((e) => console.warn("native sync skipped:", String(e.message).slice(0, 80)));
+  setInterval(() => syncNativeBalances(api).catch(() => {}), 60 * 60 * 1000);
   await pool.query(
     `CREATE TABLE IF NOT EXISTS indexer_gaps (
        id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
