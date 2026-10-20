@@ -126,11 +126,9 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
 curl "https://portalindex-98f0.onrender.com/events?pallet=eq.staking&amp;limit=5"
 curl "https://portalindex-98f0.onrender.com/indexer_gaps"</pre>
     <p class="muted">Token amounts are 128-bit integers and arrive as plain JSON numbers, so parse them as big integers.</p>
-    <p><a href="https://github.com/youthisguy/portalIndex">Source, setup guide and self-hosting on GitHub</a> (MIT).</p>
   </section>
 
   <footer>
-    <span>Built for the Portaldot V3 Hacker House. MIT licensed.</span>
     <span><a href="https://github.com/youthisguy/portalIndex">GitHub</a> · <a href="app/">App</a></span>
   </footer>
 </div>
@@ -157,7 +155,7 @@ async function load() {
     $("s-age").textContent = cur[0] ? ago(cur[0].updated_at) : "n/a";
     $("s-events").textContent = total(ev);
     $("s-gaps").textContent = total(gaps);
-    $("s-note").textContent = "Live numbers from the hosted API, refreshed every 30 seconds.";
+    $("s-note").textContent = "";
   } catch (e) {
     clearTimeout(wake);
     $("s-note").textContent = "Could not reach the API right now. Try again shortly.";
