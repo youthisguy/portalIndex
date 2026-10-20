@@ -40,3 +40,7 @@
 - Token distribution landed. First real NFTs, asset balances and contract events (Revive) now indexed; 8 contracts deployed by 6 deployers seen in revive_instantiated.
 - Added transfers panel, native balances (account_balances) and an event backfill (006_balances.sql).
 - RPC dropped the websocket (1006) after a deploy; ingester recovered. Added a 5 minute watchdog and made disconnects transient (never counted as bad blocks).
+
+## 2026-10-20
+- App UI rebuilt around the explorer layout: nav, hero search, stat cards, three feeds (blocks, transfers, events), mobile layout (nav hidden on phones, stat grid collapses, rows wrap).
+- tPOT (native token) added to the token-holders dropdown. Ingester now syncs every native balance from chain storage at startup and hourly (syncNativeBalances), without overwriting 

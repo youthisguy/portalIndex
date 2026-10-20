@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pindex Explorer</title>
+<link rel="icon" type="image/png" href="../logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -77,10 +78,10 @@ padding: 32px 24px 48px;
   text-decoration: none;
 }
 .brand-icon {
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #0088ff, #0055ff);
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  height: 28px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
 }
 .nav-links {
   display: flex;
@@ -431,25 +432,9 @@ user-select: none;
 }
 
 /* Fixed Rolling Number Counter */
-.rolling-number {
-  display: inline-flex;
-  overflow: hidden;
-  height: 1.1em;
-  line-height: 1.1em;
-  vertical-align: bottom;
-}
-.rolling-digit-col {
-  display: inline-flex;
-  flex-direction: column;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
-}
-.rolling-digit-col span {
-  display: block;
-  height: 1.1em;
-  line-height: 1.1em;
-  text-align: center;
-}
+.rolling-number{display:inline-flex;align-items:flex-start;overflow:hidden;height:1.25em;line-height:1.25em;vertical-align:bottom}
+.rolling-digit-col{display:inline-flex;flex-direction:column;align-self:flex-start;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.rolling-digit-col span{display:block;flex:0 0 auto;height:1.25em;line-height:1.25em;text-align:center}
 
 .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .foot a{color:var(--muted)}
@@ -490,8 +475,15 @@ main{padding:16px 12px 48px}
 .row span { white-space: normal; overflow-wrap: anywhere; }
 }
 /* lookup results, feed fixes, small phones */
-.events{display:grid;gap:8px}
-.ev{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:.9rem}
+.events{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.ev{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;min-width:0;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:.9rem;overflow-wrap:anywhere}
+details.evd{min-width:0;padding:10px 12px;border-radius:8px;background:var(--code-bg);border:1px solid var(--line);font-size:.9rem}
+details.evd summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;list-style:none}
+details.evd summary::-webkit-details-marker{display:none}
+details.evd summary::before{content:"▸";color:var(--muted)}
+details.evd[open] summary::before{content:"▾"}
+details.evd .pv{color:var(--muted);flex:1 1 160px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.evd pre{margin:10px 0 0;padding:10px;border-radius:6px;background:#060608;border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-height:260px;overflow:auto;font:400 .8rem/1.5 "JetBrains Mono",monospace;color:var(--ink)}
 .sub{color:var(--muted);font-size:.92rem}
 .grid>*,.three-grid>*{min-width:0}
 .view-all{display:none} /* remove this line once all.html exists */
@@ -503,6 +495,22 @@ main{padding:16px 12px 48px}
 .try button{background:transparent;border:1px solid var(--line);color:var(--bar-top);border-radius:999px;padding:3px 10px;font-size:.8rem;cursor:pointer}
 .try button:hover{border-color:var(--bar-top)}
 .hero-search-box input::placeholder{color:#9aa1b0}
+.site-foot{margin-top:56px;background:#0a0a0c;border-top:1px solid var(--line)}
+.site-foot .wrap{max-width:1440px;margin:0 auto;padding:0 24px}
+.sf-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:22px 0;border-bottom:1px solid var(--line)}
+.sf-top a{color:var(--muted);text-decoration:none;font-size:.9rem}
+.sf-icons{display:flex;gap:16px;align-items:center}
+.sf-icons svg{width:20px;height:20px;fill:currentColor;display:block}
+.sf-main{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px;padding:36px 0}
+.sf-brand p{color:var(--muted);max-width:30em;margin:12px 0 0;font-size:.9rem}
+.sf-col h3{font-size:.9rem;margin:0 0 14px;font-weight:600}
+.sf-col a,.sf-col span{display:block;color:var(--muted);text-decoration:none;font-size:.88rem;margin-bottom:9px;overflow-wrap:anywhere}
+.sf-col a:hover,.sf-top a:hover,.sf-bottom a:hover{color:var(--ink)}
+.sf-col b,.sf-bottom b{color:var(--ink);font-weight:600}
+.sf-bottom{display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:18px 0 32px;border-top:1px solid var(--line);color:var(--muted);font-size:.8rem}
+.sf-bottom a{color:var(--muted)}
+@media (max-width:900px){.sf-main{grid-template-columns:1fr 1fr}.sf-brand{grid-column:1/-1}}
+@media (max-width:480px){.sf-main{grid-template-columns:1fr}.site-foot .wrap{padding:0 14px}}
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none !important; }
   .rolling-digit-col { transition: none !important; }
@@ -516,7 +524,7 @@ main{padding:16px 12px 48px}
   <div class="hero-content">
     <nav class="top-navbar">
       <a href="#" class="brand-logo">
-        <div class="brand-icon"></div>
+        <img src="../logo.png" alt="Pindex logo" class="brand-icon">
         PINDEX
       </a>
       <div class="nav-links">
@@ -525,7 +533,7 @@ main{padding:16px 12px 48px}
         
         
         
-        <a href="#dev">API</a>
+        <a href="../#build">API</a>
         <a href="https://github.com/youthisguy/portalIndex">GitHub</a>
       </div>
     </nav>
@@ -657,20 +665,50 @@ main{padding:16px 12px 48px}
     </div>
   </section>
 
-  <!-- Developer Settings -->
-  <details class="dev-area" id="dev">
-    <summary>Developer options &amp; API endpoint</summary>
-    <div class="dev-content">
-      <label for="api" style="font-size: 0.85rem; color: var(--muted);">API address</label>
-      <input id="api" value="https://portalindex-98f0.onrender.com" aria-label="API address">
-      <button id="go">Refresh now</button>
-    </div>
-  </details>
-  <footer class="foot">
-    <span><a href="https://github.com/youthisguy/portalIndex">GitHub</a></span>
-    <span>Updated <b id="m-age">…</b></span>
-  </footer>
+  <input id="api" type="hidden" value="https://portalindex-98f0.onrender.com">
 </main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="sf-top">
+      <div class="sf-icons">
+        <a href="https://github.com/youthisguy/portalIndex" aria-label="Pindex on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      </div>
+      <a href="#top">&uarr; Back to top</a>
+    </div>
+    <div class="sf-main">
+      <div class="sf-brand">
+        <a href="../" class="brand-logo"><img src="../logo.png" alt="Pindex logo" class="brand-icon">PINDEX</a>
+        <p>An open-source indexer for the Portaldot V3 testnet.</p>
+      </div>
+      <div class="sf-col">
+        <h3>Explore</h3>
+        <a href="#h-holders">Token holders</a>
+        <a href="#h-nft">NFT owners</a>
+        <a href="../">Home</a>
+      </div>
+      <div class="sf-col">
+        <h3>Developers</h3>
+        <a href="../#build">REST API</a>
+        <a href="https://portalindex-98f0.onrender.com/indexer_cursor">API status</a>
+        <a href="https://portalindex-98f0.onrender.com/indexer_gaps">Data gaps</a>
+        <a href="https://github.com/youthisguy/portalIndex">Source on GitHub</a>
+      </div>
+      <div class="sf-col">
+        <h3>Portaldot V3 testnet</h3>
+        <span>Chain ID <b>420420777</b></span>
+        <span>EVM RPC: test-evm-rpc-v3.portaldot.dev</span>
+        <span>WS: test-node-v3.portaldot.dev</span>
+        <a href="https://node-console.portaldot.dev">Official node console</a>
+        <a href="https://discord.gg/portaldot">Portaldot Discord</a>
+      </div>
+    </div>
+    <div class="sf-bottom">
+      <span>&copy; 2026 Pindex</span>
+ 
+    </div>
+  </div>
+</footer>
 
 <script>
 const $ = (s) => document.querySelector(s);
@@ -731,13 +769,13 @@ function updateRollingCounter(targetEl, textValue) {
           col.appendChild(el('span', null, d));
         }
         col.dataset.digit = char;
-        col.style.transform = 'translateY(0em)';
+        col.style.transform = 'translateY(0)';
         wrapper.appendChild(col);
         colsToAnimate.push({ col, targetDigit: parseInt(char, 10) });
       } else {
         const nonDigit = el('span', null, char);
-        nonDigit.style.height = '1.1em';
-        nonDigit.style.lineHeight = '1.1em';
+        nonDigit.style.height = '1.25em';
+        nonDigit.style.lineHeight = '1.25em';
         wrapper.appendChild(nonDigit);
       }
     }
@@ -745,7 +783,7 @@ function updateRollingCounter(targetEl, textValue) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         colsToAnimate.forEach(({ col, targetDigit }) => {
-          col.style.transform = `translateY(-${targetDigit * 1.1}em)`;
+          col.style.transform = `translateY(-${targetDigit * 10}%)`;
         });
       });
     });
@@ -756,7 +794,7 @@ function updateRollingCounter(targetEl, textValue) {
     const char = str[i];
     if (/\d/.test(char)) {
       if (child.classList.contains('rolling-digit-col')) {
-        child.style.transform = `translateY(-${parseInt(char, 10) * 1.1}em)`;
+        child.style.transform = `translateY(-${parseInt(char, 10) * 10}%)`;
         child.dataset.digit = char;
       }
     } else {
@@ -999,7 +1037,7 @@ async function loadStats(base) {
     updateRollingCounter($("#c-assets"), assetsVal);
     updateRollingCounter($("#c-nfts"), nftsVal);
 
-    $("#m-age").textContent = cur[0] ? ago(cur[0].updated_at) : "n/a";
+    const ageEl = $("#m-age"); if (ageEl) ageEl.textContent = cur[0] ? ago(cur[0].updated_at) : "n/a";
     if (cur[0]) loadActivity(base, Number(cur[0].last_block));
 
     
@@ -1071,25 +1109,25 @@ async function loadBlocks(base) {
   } catch (e) { box.replaceChildren(el("div", "empty", "Blocks unavailable right now.")); }
 }
 
-$("#go").addEventListener("click", load);
 $("#asset").addEventListener("change", (e) => { selected = e.target.value; load(); });
-try { const saved = localStorage.getItem("pi_api"); if (saved) $("#api").value = saved; } catch (_) {}
 const qApi = new URLSearchParams(location.search).get("api"); if (qApi) $("#api").value = qApi;
-$("#api").addEventListener("change", () => { try { localStorage.setItem("pi_api", $("#api").value); } catch (_) {} load(); });
 
 async function lookupBlock(base, q, out, say) {
   const filter = /^\d+$/.test(q) ? `block_number=eq.${q}` : `block_hash=eq.${q.toLowerCase()}`;
   const evs = await get(base, `/events?${filter}&order=event_index.asc&limit=200`);
   if (!evs.length) return say("That block isn't in the index. It may be older than Pindex's history, or not indexed yet.");
-  const head = el("div", "sub", `Block ${fmt(evs[0].block_number)} · ${evs[0].block_hash}` + (evs[0].block_time ? " · " + ago(evs[0].block_time) : ""));
+  const head = el("div", "sub", `Block ${fmt(evs[0].block_number)}` + (evs[0].block_time ? " · " + ago(evs[0].block_time) : "") + " · " + evs.length + " events · hash ");
   head.style.marginBottom = "12px";
   head.style.overflowWrap = "anywhere";
+  head.append(makeAddressElement(evs[0].block_hash));
   out.append(head);
   const box = el("div", "events");
   evs.forEach((e) => {
     const d = JSON.stringify(e.data);
-    const r = el("div", "ev");
-    r.append(el("span", "mono", e.pallet + "." + e.name), el("code", null, d.length > 90 ? d.slice(0, 90) + "…" : d));
+    const r = el("details", "evd");
+    const sum = el("summary", null);
+    sum.append(el("span", "mono", e.pallet + "." + e.name), el("span", "pv mono", d));
+    r.append(sum, el("pre", null, JSON.stringify(e.data, null, 2)));
     box.append(r);
   });
   out.append(box);

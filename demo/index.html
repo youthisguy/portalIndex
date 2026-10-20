@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pindex: Portaldot forgets, Pindex remembers</title>
+<link rel="icon" type="image/png" href="logo.png">
 <meta name="description" content="An open-source indexer for Portaldot V3. It captures chain events as they happen, flags what it missed, and serves them as a REST API and a searchable app.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,7 +20,8 @@ a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .wrap{max-width:1040px;margin:0 auto;padding:0 20px}
 nav{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;flex-wrap:wrap}
-nav b{font-weight:700;font-size:1.1rem;letter-spacing:-.01em}
+nav .brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font-weight:700;font-size:1.1rem;letter-spacing:-.01em}
+nav .brand img{height:28px;width:auto;display:block}
 nav .links{display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:.95rem}
 nav .links a{color:var(--muted);text-decoration:none}
 nav .links a:hover{color:var(--ink)}
@@ -56,7 +58,7 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
 <body>
 <div class="wrap">
   <nav aria-label="Main">
-    <b>Pindex</b>
+    <a href="./" class="brand"><img src="logo.png" alt="" width="28" height="28">PINDEX</a>
     <div class="links">
       <a href="#how">How it works</a>
       <a href="#build">For developers</a>
