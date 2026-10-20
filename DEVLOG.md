@@ -37,3 +37,6 @@
 
 ## 2026-10-19
 - Ingester stalled 12 h on a staking.Rewarded event (RewardDestination enum has a None variant); fixed Option detection and added poison-block skipping.
+- Token distribution landed. First real NFTs, asset balances and contract events (Revive) now indexed; 8 contracts deployed by 6 deployers seen in revive_instantiated.
+- Added transfers panel, native balances (account_balances) and an event backfill (006_balances.sql).
+- RPC dropped the websocket (1006) after a deploy; ingester recovered. Added a 5 minute watchdog and made disconnects transient (never counted as bad blocks).
