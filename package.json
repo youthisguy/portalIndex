@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@polkadot/api": "^17.0.2",
+    "ethers": "^6.17.0",
     "pg": "^8.23.1",
     "postgraphile": "^4.14.1",
     "tsx": "^4.23.15",
