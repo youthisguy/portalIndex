@@ -183,6 +183,9 @@ code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9em; }
   border-radius: 4px;
 }
 .copy-btn:hover { color: var(--ink); background: var(--line); }
+.share-btn{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:8px;padding:4px;background:transparent;border:none;border-radius:6px;color:var(--muted);cursor:pointer}
+.share-btn:hover{color:var(--ink);background:var(--line)}
+.share-btn.done{color:var(--success)}
 
 /* Layout Grid & Cards */
 .grid{display:grid;gap:24px;grid-template-columns:1fr;margin-bottom:24px;}
@@ -523,7 +526,7 @@ details.evd pre{margin:10px 0 0;padding:10px;border-radius:6px;background:#06060
 <header class="hero-wrapper">
   <div class="hero-content">
     <nav class="top-navbar">
-      <a href="#" class="brand-logo">
+      <a href="../" class="brand-logo">
         <img src="../logo.png" alt="Pindex logo" class="brand-icon">
         PINDEX
       </a>
@@ -1120,6 +1123,7 @@ async function lookupBlock(base, q, out, say) {
   head.style.marginBottom = "12px";
   head.style.overflowWrap = "anywhere";
   head.append(makeAddressElement(evs[0].block_hash));
+  head.append(makeShareButton());
   out.append(head);
   const box = el("div", "events");
   evs.forEach((e) => {
@@ -1133,9 +1137,34 @@ async function lookupBlock(base, q, out, say) {
   out.append(box);
 }
 
+const ICON_LINK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+function makeShareButton() {
+  const b = el("button", "share-btn");
+  b.type = "button";
+  b.title = "Copy link to this result";
+  b.setAttribute("aria-label", "Copy link to this result");
+  b.innerHTML = ICON_LINK;
+  b.addEventListener("click", () => {
+    navigator.clipboard.writeText(location.href).then(() => {
+      b.innerHTML = ICON_CHECK; b.classList.add("done"); b.title = "Link copied";
+      setTimeout(() => { b.innerHTML = ICON_LINK; b.classList.remove("done"); b.title = "Copy link to this result"; }, 1500);
+    }).catch(() => {});
+  });
+  return b;
+}
+
+function setQuery(v) {
+  const u = new URL(location.href);
+  if (v) u.searchParams.set("q", v); else u.searchParams.delete("q");
+  history.replaceState(null, "", u);
+}
+
 async function lookup() {
   const base = $("#api").value.replace(/\/$/, "");
   let a = $("#addr").value.trim(); const out = $("#look"); out.replaceChildren();
+  setQuery(a);
   if (!a) return;
   const say = (m) => out.append(el("div", "empty", m));
   try {
@@ -1165,6 +1194,7 @@ async function lookup() {
     
     const subText = el("div", "sub", "Addresses found:");
     subText.style.marginBottom = "0";
+    subText.append(makeShareButton());
     headerWrap.append(subText);
     
     const addrsRow = el("div", null);
@@ -1218,6 +1248,8 @@ document.querySelectorAll("[data-try]").forEach((b) => b.addEventListener("click
 }));
 $("#find").addEventListener("click", lookup);
 $("#addr").addEventListener("keydown", (e) => { if (e.key === "Enter") lookup(); });
+const qParam = new URLSearchParams(location.search).get("q");
+if (qParam) { $("#addr").value = qParam; lookup(); }
 load(); 
 setInterval(load, 15000);
 </script>
