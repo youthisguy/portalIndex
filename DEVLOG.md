@@ -44,3 +44,9 @@
 ## 2026-10-20
 - App UI rebuilt around the explorer layout: nav, hero search, stat cards, three feeds (blocks, transfers, events), mobile layout (nav hidden on phones, stat grid collapses, rows wrap).
 - tPOT (native token) added to the token-holders dropdown. Ingester now syncs every native balance from chain storage at startup and hourly (syncNativeBalances), without overwriting 
+
+## 2026-10-21
+- Retention probe (scripts/retention-check.ts): the public node now serves events from block 1 and keeps old block bodies. On 2026-10-17 state for blocks 1, 1000 and 50000 was discarded, so retention has changed. README claims about a pruned node corrected.
+- Skipped-block gap filling deployed: the two 'processing error' gaps (blocks 107052 and 107245, WebSocket drops on Oct 19) were re-read and marked filled; unfilled gaps now 0. Filled rows are kept with filled_at.
+- Home page copy reworked to describe what Pindex does for builders (address search, token and NFT holders, contract events over REST) instead of comparing with other tools.
+- Next: backfill history from block 1 now that the node serves it.

@@ -209,9 +209,6 @@ async function main() {
   console.log(`Typed tables ready: ${typed.size} (pallets: ${PALLETS})`);
 
   await applyMigrations();
-  seedAccounts(api).catch((e) => console.warn("seeding skipped:", String(e.message).slice(0, 80)));
-  syncNativeBalances(api).catch((e) => console.warn("native sync skipped:", String(e.message).slice(0, 80)));
-  setInterval(() => syncNativeBalances(api).catch(() => {}), 60 * 60 * 1000);
   await pool.query(
     `CREATE TABLE IF NOT EXISTS indexer_gaps (
        id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
@@ -219,8 +216,22 @@ async function main() {
   );
 
   await pool.query("ALTER TABLE indexer_gaps ADD COLUMN IF NOT EXISTS filled_at TIMESTAMPTZ");
-  fillGaps(api, chainKey, typed).catch((e) => console.warn("gap fill skipped:", String(e.message).slice(0, 80)));
-  setInterval(() => fillGaps(api, chainKey, typed).catch(() => {}), 30 * 60 * 1000);
+  // Background jobs wait until the live indexer has caught up, then run one at a time.
+  let caughtUp = false;
+  let bgBusy = false;
+  let lastBg = 0;
+  const runBackground = async () => {
+    if (!caughtUp || bgBusy || !api.isConnected) return;
+    bgBusy = true;
+    try {
+      await syncNativeBalances(api).catch((e) => console.warn("native sync skipped:", String(e.message).slice(0, 80)));
+      await seedAccounts(api).catch((e) => console.warn("seeding skipped:", String(e.message).slice(0, 80)));
+      await fillGaps(api, chainKey, typed).catch((e) => console.warn("gap fill skipped:", String(e.message).slice(0, 80)));
+    } finally {
+      bgBusy = false;
+      lastBg = Date.now();
+    }
+  };
 
   const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
@@ -236,16 +247,23 @@ async function main() {
 
   const failures = new Map<number, number>();
   let lastHeadAt = Date.now();
+  let lastProgressAt = Date.now(); // last block stored, or last time we were fully caught up
   setInterval(() => {
-    if (Date.now() - lastHeadAt > 5 * 60 * 1000) {
+    const now = Date.now();
+    if (now - lastHeadAt > 5 * 60 * 1000) {
       console.error("No finalized head for 5 minutes; exiting so the supervisor reconnects");
       process.exit(1);
     }
-  }, 60_000);
+    if (now - lastProgressAt > 3 * 60 * 1000) {
+      console.error("No block stored for 3 minutes; exiting so the supervisor reconnects");
+      process.exit(1);
+    }
+  }, 30_000);
   let running = false;
   // Finalized heads only: finalized blocks cannot be reorged.
   await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     lastHeadAt = Date.now();
+    if (next > header.number.toNumber()) lastProgressAt = Date.now(); // nothing to do means healthy
     if (running) return; // a catch-up loop is already working
     running = true;
     try {
@@ -254,6 +272,7 @@ async function main() {
         try {
           await processBlock(api, chainKey, next, typed);
           next++;
+          lastProgressAt = Date.now();
           await sleep(DELAY_MS);
         } catch (e: any) {
           const msg = String(e?.message ?? e);
@@ -279,6 +298,8 @@ async function main() {
           }
         }
       }
+      caughtUp = true;
+      if (Date.now() - lastBg > 60 * 60 * 1000) void runBackground();
     } catch (e) {
       console.error("ingest error, will retry on next head:", e);
     } finally {

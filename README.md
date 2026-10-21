@@ -8,11 +8,7 @@ events, with no per-pallet handler code.
 > Tested against the Portaldot V3 testnet and Westend Asset Hub.
 
 ## Why
-Portaldot builders currently have to write their own block scrapers to answer
-basic questions like token holders, NFT ownership or contract events. The
-public testnet node is also pruned (state for old blocks is discarded), so
-history that is not captured as it happens is lost. PortalIndex captures it,
-records any gaps it could not capture, and serves it back as an API.
+Portaldot builders who want to know who holds a token, who owns an NFT or what a contract emitted have to write their own block scraper first. Pindex does that work once: it indexes the chain into a database and serves it as a REST API and a searchable app, and it records any range it could not read.
 
 ## How it works
 1. The ingester connects to a Substrate RPC and walks finalized blocks only
@@ -106,9 +102,7 @@ Live demo page: https://pindex.onrender.com/ (reads the hosted API).
 Large integers (token balances) are returned as JSON numbers; parse them as big integers.
 
 ## Findings about the Portaldot V3 testnet
-- The public node is pruned: state for old blocks is discarded, so history
-  cannot be backfilled from it. Staking era data is the exception (84 eras are
-  kept in storage).
+- State history changes over time: on 2026-10-17 the public node could not serve events for old blocks (1, 1000, 50000), and on 2026-10-21 it served them from block 1 (`scripts/retention-check.ts`). Pindex records any range it cannot read in `indexer_gaps` and retries it.
 - Two contract runtimes are present: `Contracts` (WASM/ink!) and `Revive` (EVM).
   Both emit `ContractEmitted`.
 - `reviveApi.accountId` / `reviveApi.address` map between H160 and native
@@ -117,8 +111,7 @@ Large integers (token balances) are returned as JSON numbers; parse them as big 
 ## Limits
 - Derived state replays events, so it is only as complete as the events
   captured plus the baseline snapshot. Native token balances are not derived.
-- Gaps while the ingester is offline longer than the node's state window are
-  unrecoverable; they are recorded in `indexer_gaps`.
+- A range the node cannot serve is recorded in `indexer_gaps` and retried; ranges that stay unreadable are marked unrecoverable. History before indexing began (about block 92,500 on the hosted instance) is not backfilled yet.
 - Schema changes after runtime upgrades are not migrated yet.
 
 ## Scripts

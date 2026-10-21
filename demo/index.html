@@ -4,7 +4,7 @@
 <script defer src="https://cloud.umami.is/script.js" data-website-id="c18b3372-1b8b-4adc-b3ca-cbec6bb803be"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pindex: Portaldot forgets, Pindex remembers</title>
+<title>Pindex: search Portaldot by address, build on its API</title>
 <link rel="icon" type="image/png" href="logo.png">
 <meta name="description" content="An open-source indexer for Portaldot V3. It captures chain events as they happen, flags what it missed, and serves them as a REST API and a searchable app.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,8 +68,8 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
   </nav>
 
   <header class="hero">
-    <h1>Portaldot forgets. Pindex remembers.</h1>
-    <p class="lead">The public Portaldot V3 testnet node throws away old blocks within minutes. Pindex captures every event as it happens, flags anything it missed, and serves it as a REST API and a searchable app.</p>
+    <h1>Every address on Portaldot, one search away.</h1>
+    <p class="lead">Pindex indexes the Portaldot V3 testnet into a searchable app and a REST API: balances, token holders, NFT owners, EVM and native address mapping, and event history.</p>
     <div class="cta">
       <a class="btn primary" href="app/">Open the app</a>
       <a class="btn" href="#build">Use the API</a>
@@ -78,7 +78,7 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
       <div><small>Latest indexed block</small><strong id="s-block">…</strong></div>
       <div><small>Last update</small><strong id="s-age">…</strong></div>
       <div><small>Events stored</small><strong id="s-events">…</strong></div>
-      <div><small>Known data gaps</small><strong id="s-gaps">…</strong></div>
+      <div><small>Unfilled data gaps</small><strong id="s-gaps">…</strong></div>
     </div>
     <p class="live-note" id="s-note">Live numbers from the hosted API.</p>
   </header>
@@ -88,7 +88,7 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
       <div>
         <h2 id="why">The problem</h2>
         <p>Builders on Portaldot who want to know who holds a token, who owns an NFT, or what a contract emitted have to write their own block scraper first. That is the first thing a dapp needs and the last thing a team wants to build.</p>
-        <p>It is harder on this testnet: the node keeps state for only a few hundred blocks, so anything not captured as it happens is gone for good.</p>
+        <p>Deploy a contract and Pindex can serve its events from a ready REST endpoint, so you do not have to write a scraper. Raw events are captured today; decoding them with your ABI is in progress.</p>
       </div>
       <div>
         <h2>What Pindex does</h2>
@@ -103,7 +103,7 @@ footer{padding:32px 0 56px;border-top:1px solid var(--line);color:var(--muted);f
     <ol class="steps">
       <li><b>Reads the chain's metadata</b><span class="muted">Every pallet and event the runtime defines, with field names and types.</span></li>
       <li><b>Creates one typed table per event</b><span class="muted">For example balances_transfer or nfts_issued, with real column types. No handlers to write.</span></li>
-      <li><b>Follows finalized blocks</b><span class="muted">Each block and its cursor are saved in one transaction. If the node has already discarded a range, the gap is recorded, not hidden.</span></li>
+      <li><b>Follows finalized blocks</b><span class="muted">Each block and its cursor are saved in one transaction. If a range cannot be read, the gap is recorded, not hidden, and retried later.</span></li>
       <li><b>Serves it back</b><span class="muted">A public read-only REST API and this app. GraphQL is available if you self-host.</span></li>
     </ol>
   </section>
@@ -150,7 +150,7 @@ async function load() {
     const [cur, ev, gaps] = await Promise.all([
       fetch(API + "/indexer_cursor?select=last_block,updated_at").then((r) => r.json()),
       fetch(API + "/events?select=block_number&limit=1", head),
-      fetch(API + "/indexer_gaps?select=id&limit=1", head),
+      fetch(API + "/indexer_gaps?select=id&filled_at=is.null&limit=1", head),
     ]);
     clearTimeout(wake);
     $("s-block").textContent = cur[0] ? fmt(cur[0].last_block) : "n/a";
