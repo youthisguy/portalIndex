@@ -48,7 +48,8 @@ async function mapAccounts(api: ApiPromise, accounts: string[], blockNum: number
       const info: any = await q.system.account(a);
       await pool.query(
         `INSERT INTO account_balances (account, free, reserved, block) VALUES ($1,$2,$3,$4)
-         ON CONFLICT (account) DO UPDATE SET free = $2, reserved = $3, block = $4, updated_at = now()`,
+         ON CONFLICT (account) DO UPDATE SET free = $2, reserved = $3, block = $4, updated_at = now()
+         WHERE account_balances.block <= $4`,
         [a, info.data.free.toString(), info.data.reserved.toString(), blockNum]
       );
     } catch { /* optional */ }
@@ -125,7 +126,8 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
     }
     await client.query(
       `INSERT INTO indexer_cursor (chain_key, last_block) VALUES ($1,$2)
-       ON CONFLICT (chain_key) DO UPDATE SET last_block = $2, updated_at = now()`,
+       ON CONFLICT (chain_key) DO UPDATE SET last_block = $2, updated_at = now()
+         WHERE indexer_cursor.last_block <= $2`,
       [chainKey, n]
     );
     await client.query("COMMIT");
@@ -137,6 +139,35 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   }
   await mapAccounts(api, [...touched], n, apiAt.query);
   console.log(`block ${n}: ${events.length} events`);
+}
+
+// Re-reads blocks that were skipped because of a processing error, while the node still
+// serves their state. A gap is marked filled (kept for the record), or marked unrecoverable.
+async function fillGaps(api: ApiPromise, chainKey: string, typed: Map<string, EventTable>) {
+  const gaps = await pool.query(
+    `SELECT id, from_block, to_block FROM indexer_gaps
+     WHERE filled_at IS NULL AND reason LIKE 'processing error%' AND to_block - from_block < 2000 ORDER BY id`
+  );
+  for (const g of gaps.rows) {
+    let ok = true;
+    for (let n = Number(g.from_block); n <= Number(g.to_block); n++) {
+      try {
+        await processBlock(api, chainKey, n, typed);
+      } catch (e: any) {
+        ok = false;
+        if (/discarded|unknown block|4003/i.test(String(e?.message ?? e))) {
+          await pool.query("UPDATE indexer_gaps SET reason = 'unrecoverable: ' || reason WHERE id = $1", [g.id]);
+          console.warn(`gap ${g.id} (blocks ${g.from_block}-${g.to_block}) can no longer be read from the node`);
+        }
+        break;
+      }
+      await sleep(100);
+    }
+    if (ok) {
+      await pool.query("UPDATE indexer_gaps SET filled_at = now() WHERE id = $1", [g.id]);
+      console.log(`gap ${g.id} filled (blocks ${g.from_block}-${g.to_block})`);
+    }
+  }
 }
 
 // Runs sql/NNN_*.sql in order. Every file is idempotent, so this is safe on each start.
@@ -186,6 +217,10 @@ async function main() {
        id SERIAL PRIMARY KEY, chain_key TEXT NOT NULL, from_block BIGINT NOT NULL,
        to_block BIGINT NOT NULL, reason TEXT NOT NULL, detected_at TIMESTAMPTZ NOT NULL DEFAULT now())`
   );
+
+  await pool.query("ALTER TABLE indexer_gaps ADD COLUMN IF NOT EXISTS filled_at TIMESTAMPTZ");
+  fillGaps(api, chainKey, typed).catch((e) => console.warn("gap fill skipped:", String(e.message).slice(0, 80)));
+  setInterval(() => fillGaps(api, chainKey, typed).catch(() => {}), 30 * 60 * 1000);
 
   const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
