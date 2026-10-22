@@ -50,3 +50,12 @@
 - Skipped-block gap filling deployed: the two 'processing error' gaps (blocks 107052 and 107245, WebSocket drops on Oct 19) were re-read and marked filled; unfilled gaps now 0. Filled rows are kept with filled_at.
 - Home page copy reworked to describe what Pindex does for builders (address search, token and NFT holders, contract events over REST) instead of comparing with other tools.
 - Next: backfill history from block 1 now that the node serves it.
+- Contract registry shipped. Anyone can POST a contract address and Solidity event ABI to /contracts and get a slug, a URL and a manage token. Decoded events are served at /c/<slug>/events with name, block range, limit and order filters.
+- Decoding reads revive.ContractEmitted rows from the existing events table (decode worker, sql/008_contracts.sql: contracts + decoded_events). Backfill and live decoding share one code path, and ingest.ts is unchanged.
+- registry.ts is now the public front door on $PORT: it handles /contracts and /c/*, and proxies everything else to PostgREST on internal port 3000. The old API URL keeps working. start.sh runs PostgREST, the ingester and the registry, and the container restarts if any of them exits.
+- Manage token is stored as a sha256 hash and never exposed through PostgREST (web_anon revoked on contracts). Resync and delete need the token. Registrations are rate-limited per address and the registry is capped at 200 contracts.
+- Landing page rebuilt around the registry: registration form (paste, upload .json or Hardhat/Foundry artifact), live decode-progress panel, looping console walkthrough, gradients, shared footer.
+- Added scripts/guess-abi.mjs: recovers an event ABI from a contract's on-chain logs by looking up topic0 in a signature database and matching the indexed/non-indexed split against real logs.
+- Verified on the live testnet with 0x74fc…cc71: 5 distinct event types seen, 1 recovered (PoolWhitelisted(address,bool)). Pindex decoded 3 of 3 matching logs with correct pool and whitelisted values, and skipped the other 4 types without errors. Decode reached the chain head (block 133,289).
+- Known limits: history starts at the first indexed block (indexed_from_block). Gap fills are not decoded automatically, so use resync after a fill. Custom events need the real ABI. Solidity ABIs only, not ink! metadata.
+- Next: README (move contract decoding from Planned to Working, document /contracts and /c/<slug>/events), raw-logs endpoint for contracts without an ABI, backfill history from block 1 now that the node serves it.
