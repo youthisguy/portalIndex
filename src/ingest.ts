@@ -1,5 +1,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import pg from "pg";
+import http from "http";
+import { lookupAddress } from "./address-lookup.js";
 import { readdirSync, readFileSync } from "fs";
 import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
 
@@ -201,6 +203,15 @@ async function recordGap(chainKey: string, from: number, to: number, reason: str
 
 async function main() {
   const api = await ApiPromise.create({ provider: new WsProvider(WS) });
+
+  // Internal lookup server: the registry proxies GET /address/<addr> here, so this one chain connection serves everything.
+  http.createServer(async (req, res) => {
+    const m = /^\/address\/([^/?]+)/.exec(req.url ?? "");
+    res.setHeader("content-type", "application/json");
+    if (!m) { res.statusCode = 404; return res.end("{}"); }
+    try { res.end(JSON.stringify(await lookupAddress(api, decodeURIComponent(m[1])))); }
+    catch { res.statusCode = 400; res.end(JSON.stringify({ error: "could not resolve that address" })); }
+  }).listen(3100, "127.0.0.1");
   const chainKey = api.genesisHash.toHex();
   console.log(`Connected to ${(await api.rpc.system.chain()).toString()} (${chainKey.slice(0, 10)}...)`);
 
@@ -216,22 +227,26 @@ async function main() {
   );
 
   await pool.query("ALTER TABLE indexer_gaps ADD COLUMN IF NOT EXISTS filled_at TIMESTAMPTZ");
-  // Background jobs wait until the live indexer has caught up, then run one at a time.
-  let caughtUp = false;
-  let bgBusy = false;
-  let lastBg = 0;
-  const runBackground = async () => {
-    if (!caughtUp || bgBusy || !api.isConnected) return;
-    bgBusy = true;
+  // Heavy housekeeping runs a few minutes after start, one task at a time, so a burst of requests
+  // cannot get the connection dropped by the node. Set HOUSEKEEPING=off to disable it.
+  let housekeeping = false;
+  const runHousekeeping = async () => {
+    if (housekeeping || process.env.HOUSEKEEPING === "off") return;
+    housekeeping = true;
     try {
-      await syncNativeBalances(api).catch((e) => console.warn("native sync skipped:", String(e.message).slice(0, 80)));
-      await seedAccounts(api).catch((e) => console.warn("seeding skipped:", String(e.message).slice(0, 80)));
-      await fillGaps(api, chainKey, typed).catch((e) => console.warn("gap fill skipped:", String(e.message).slice(0, 80)));
-    } finally {
-      bgBusy = false;
-      lastBg = Date.now();
-    }
+      const tasks: [string, () => Promise<unknown>][] = [
+        ["gap fill", () => fillGaps(api, chainKey, typed)],
+        ["balance seeding", () => seedAccounts(api)],
+        ["native balance sync", () => syncNativeBalances(api)],
+      ];
+      for (const [name, fn] of tasks) {
+        try { await fn(); } catch (e: any) { console.warn(`${name} skipped:`, String(e?.message ?? e).slice(0, 80)); }
+        await sleep(5000);
+      }
+    } finally { housekeeping = false; }
   };
+  setTimeout(runHousekeeping, 3 * 60 * 1000);
+  setInterval(runHousekeeping, 60 * 60 * 1000);
 
   const res = await pool.query("SELECT last_block FROM indexer_cursor WHERE chain_key = $1", [chainKey]);
   let next: number;
@@ -247,23 +262,17 @@ async function main() {
 
   const failures = new Map<number, number>();
   let lastHeadAt = Date.now();
-  let lastProgressAt = Date.now(); // last block stored, or last time we were fully caught up
+  let lastProgressAt = Date.now();
   setInterval(() => {
-    const now = Date.now();
-    if (now - lastHeadAt > 5 * 60 * 1000) {
-      console.error("No finalized head for 5 minutes; exiting so the supervisor reconnects");
+    if (Date.now() - lastProgressAt > 5 * 60 * 1000) {
+      console.error("No block processed for 5 minutes; exiting so the supervisor reconnects");
       process.exit(1);
     }
-    if (now - lastProgressAt > 3 * 60 * 1000) {
-      console.error("No block stored for 3 minutes; exiting so the supervisor reconnects");
-      process.exit(1);
-    }
-  }, 30_000);
+  }, 60_000);
   let running = false;
   // Finalized heads only: finalized blocks cannot be reorged.
   await api.rpc.chain.subscribeFinalizedHeads(async (header) => {
     lastHeadAt = Date.now();
-    if (next > header.number.toNumber()) lastProgressAt = Date.now(); // nothing to do means healthy
     if (running) return; // a catch-up loop is already working
     running = true;
     try {
@@ -298,10 +307,9 @@ async function main() {
           }
         }
       }
-      caughtUp = true;
-      if (Date.now() - lastBg > 60 * 60 * 1000) void runBackground();
-    } catch (e) {
-      console.error("ingest error, will retry on next head:", e);
+      lastProgressAt = Date.now();
+    } catch (e: any) {
+      console.error("ingest error, will retry on next head:", String(e?.message ?? e).slice(0, 120));
     } finally {
       running = false;
     }

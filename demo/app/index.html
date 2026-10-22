@@ -1998,9 +1998,7 @@
 
       async function lookup() {
         const base = $("#api").value.replace(/\/$/, "");
-        let a = $("#addr").value.trim();
-        const out = $("#look");
-        out.replaceChildren();
+        let a = $("#addr").value.trim(); const out = el("div"); $("#look").replaceChildren(out);
         setQuery(a);
         if (!a) return;
         const say = (m) => out.append(el("div", "empty", m));

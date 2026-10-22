@@ -274,13 +274,25 @@ const server = http.createServer(async (req, res) => {
     const seg = u.pathname.split("/").filter(Boolean);
 
     if (seg[0] === "address" && seg.length === 2 && req.method === "GET") {
-      if (!allowAddr(clientIp(req))) return send(res, 429, { error: "slow down" });
-      const p = http.get({ host: "127.0.0.1", port: 3100, path: "/address/" + seg[1], timeout: 15000 }, (r) => {
-        res.writeHead(r.statusCode ?? 502, { ...CORS, "content-type": "application/json" });
-        r.pipe(res);
-      });
+      if (!allowAddr(clientIp(req)))
+        return send(res, 429, { error: "slow down" });
+      const p = http.get(
+        {
+          host: "127.0.0.1",
+          port: 3100,
+          path: "/address/" + seg[1],
+          timeout: 15000,
+        },
+        (r) => {
+          res.writeHead(r.statusCode ?? 502, {
+            ...CORS,
+            "content-type": "application/json",
+          });
+          r.pipe(res);
+        }
+      );
       p.on("timeout", () => p.destroy());
-      p.on("error", () => { if (!res.headersSent) send(res, 502, { error: "lookup unavailable, try again shortly" }); });
+      p.on("error", (e: any) => { if (!res.headersSent) send(res, 502, { error: "lookup unavailable, try again shortly", detail: e?.code ?? String(e?.message ?? e).slice(0, 60) }); });
       return;
     }
 
