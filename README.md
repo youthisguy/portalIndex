@@ -1,21 +1,37 @@
-# PortalIndex
+# Pindex — The public data layer for Portaldot V3
 
-A metadata-driven indexer for Portaldot V3. It reads runtime metadata and
-generates Postgres tables, a REST API and a GraphQL API for any pallet's
-events, with no per-pallet handler code.
+![Status](https://img.shields.io/badge/status-live%20on%20testnet-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-> Status: live on the Portaldot V3 testnet (Hacker House, Oct 14 - Nov 6, 2026).
+A metadata-driven indexer for Portaldot V3. It reads runtime metadata and auto-generates Postgres tables, a REST API, and a GraphQL API for any pallet’s events with **zero per-pallet handler code**.
+
+**Search any address. See token holders & NFT owners. Or just paste a contract address + ABI to get a public endpoint for its decoded events.**
+
+No scraper. No complex setup.
+
+> **Status:** Live on the Portaldot V3 testnet (Hacker House, Oct 14 – Nov 6, 2026)
 
 ## Links
-- App: https://pindex.onrender.com/app/
-- Home and API docs: https://pindex.onrender.com/
-- Public REST API: https://portalindex-98f0.onrender.com
+- **App**: https://pindex.onrender.com/app/
+- **Home & API docs**: https://pindex.onrender.com/
+- **Public REST API**: https://portalindex-98f0.onrender.com
+- **Source**: https://github.com/youthisguy/portalIndex
 - Architecture diagram: [docs/architecture.mermaid](docs/architecture.mermaid)
-- Development log (daily progress, including failures): [DEVLOG.md](DEVLOG.md)
-- Checkpoint contract on the V3 testnet: `0x6a5cce928e49c5062acD7aA876335a8041c7adc9` (details below)
+- Development log: [DEVLOG.md](DEVLOG.md)
+- Checkpoint contract: `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`
 
 ## Why
 Portaldot builders who want to know who holds a token, who owns an NFT or what a contract emitted have to write their own block scraper first. Pindex does that work once: it indexes the chain into a database and serves it as a REST API and a searchable app, and it records any range it could not read.
+
+## Built for Portaldot V3
+
+Pindex is designed specifically around V3 capabilities:
+
+- Runtime metadata → automatic schema generation (no handlers)
+- Both contract runtimes (`Contracts` + `Revive`)
+- `reviveApi` for H160 ↔ native (SS58) address mapping
+- Assets, Uniques, and Nfts pallets
+- Finalized blocks only + honest gap tracking
 
 ## How it works
 1. The ingester connects to a Substrate RPC and walks finalized blocks only
@@ -129,7 +145,7 @@ History starts at the first block Pindex indexed (`indexed_from_block` on the co
 | Address           | `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`  |
 | Deployed at block | 135953                                        |
 | Deployer          | `0x378598779d64d4c0ee191dbb98a487535e2b7048`  |
-| Deployment tx     | `0xYOUR_64_HEX_TX_HASH`                       |
+| Deployment tx     | `0x6459ab692c450bb9088b38673bf7eb1b76346f6400706372abf111acfe93eb33` |
 ```
 
 Pindex indexed its own deployment:

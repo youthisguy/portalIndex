@@ -99,11 +99,50 @@ body{background:radial-gradient(900px 520px at 12% -6%,rgba(21,112,239,.20),tran
 .live div{background:linear-gradient(180deg,var(--surface),color-mix(in srgb,var(--surface) 88%,var(--g1)))}
 .term{box-shadow:0 20px 60px -20px rgba(21,112,239,.45),0 0 0 1px rgba(124,58,237,.18)}
 .panel{position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 94%,var(--g1)),var(--surface))}
-.panel::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3))}
+/* .panel::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3))} */
 .limits{border-left:0;position:relative;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 90%,var(--g1)),var(--surface))}
 .limits::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,var(--g1),var(--g2))}
 ol.steps li::before{background:linear-gradient(135deg,rgba(21,112,239,.15),rgba(124,58,237,.15));border-color:transparent}
 section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--ink) 70%,var(--g1)));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* api reference (console) */
+.api{display:grid;gap:14px;grid-template-columns:1fr;margin-top:18px}
+.api>*{min-height:0;min-width:0}
+@media (min-width:900px){.api{grid-template-columns:290px minmax(0,1fr);height:640px}}
+.api-nav,.api-main{background:#0a0e17;border:1px solid #243049;border-radius:12px;color:#e2e8f0;box-shadow:0 20px 60px -24px rgba(21,112,239,.45),0 0 0 1px rgba(124,58,237,.14)}
+.api-nav{display:flex;flex-direction:column;gap:2px;padding:8px;height:210px;overflow:auto}
+.api-main{display:flex;flex-direction:column;height:560px;overflow:hidden}
+@media (min-width:900px){.api-nav,.api-main{height:auto}}
+.api-g{font:500 .68rem "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.1em;color:#64748b;padding:10px 8px 4px}
+.ep{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 8px;color:#cbd5e1;cursor:pointer;font:500 .82rem "JetBrains Mono",monospace}
+.ep:hover{background:#131b2e}
+.ep.on{background:#1b2640;border-color:#2c3a5c;color:#fff}
+.ep .pth{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mth{flex:none;min-width:50px;text-align:center;font:700 .66rem "JetBrains Mono",monospace;padding:3px 6px;border-radius:5px;letter-spacing:.04em}
+.mth.get{color:#4ade80;background:rgba(74,222,128,.13)}
+.mth.post{color:#60a5fa;background:rgba(96,165,250,.14)}
+.mth.delete{color:#f87171;background:rgba(248,113,113,.14)}
+.con-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#131b2e;border-bottom:1px solid #243049;flex:none;min-width:0}
+.con-dots{display:flex;gap:6px;flex:none}
+.con-dots i{display:block;width:10px;height:10px;border-radius:50%}
+.con-dots i:nth-child(1){background:#f87171}.con-dots i:nth-child(2){background:#fbbf24}.con-dots i:nth-child(3){background:#4ade80}
+.con-title{font:500 .78rem "JetBrains Mono",monospace;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.con-body{flex:1;min-height:0;overflow:auto;padding:16px 18px}
+.con-h{font:600 1.05rem "Instrument Sans",sans-serif;margin:0 0 4px;color:#fff}
+.con-d{color:#94a3b8;font-size:.88rem;margin:0 0 6px}
+.con-sec{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 6px;font:500 .72rem "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em;color:#64748b}
+.con-tabs{display:flex;gap:4px}
+.con-tab{background:transparent;border:0;color:#94a3b8;font:500 .75rem "JetBrains Mono",monospace;padding:3px 8px;border-radius:5px;cursor:pointer}
+.con-tab[aria-selected=true]{background:#1e293b;color:#fff}
+.con-btn{background:transparent;border:1px solid #243049;color:#e2e8f0;font:500 .75rem "JetBrains Mono",monospace;padding:3px 10px;border-radius:6px;cursor:pointer}
+.con-btn:hover{border-color:#3b82f6}
+.con-btn.run{background:var(--grad);border-color:transparent;color:#fff}
+.con-btn:disabled{opacity:.6;cursor:wait}
+.con-pre{margin:0;background:#060a12;border:1px solid #243049;border-radius:8px;padding:12px 14px;font:400 .8rem/1.6 "JetBrains Mono",monospace;color:#e2e8f0;overflow:auto;white-space:pre}
+.con-pre.cmd::before{content:"$ ";color:#4ade80}
+.con-pre.res{max-height:300px}
+.con-stat{text-transform:none;letter-spacing:0;margin-left:8px;font-size:.78rem}
+.con-stat.ok{color:#4ade80}.con-stat.bad{color:#f87171}.con-stat.idle{color:#64748b}
+.j-k{color:#c4b5fd}.j-s{color:#67e8f9}.j-n{color:#fbbf24}.j-b{color:#f9a8d4}
 /* footer */
 .brand-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
 .brand-icon{height:28px;width:auto;display:block;flex-shrink:0}
@@ -281,27 +320,20 @@ section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--i
       <li>See token holders ranked by balance, and who owns each NFT.</li>
       <li>Browse the latest events from every indexed pallet, including staking and sessions.</li>
       <li>Query the same data over REST with filters and pagination.</li>
-      <li>Decode your contract’s events with your own ABI <span class="tag">live</span></li>
-      <li>Per-era staking history for validator tools <span class="tag">planned</span></li>
+      <li>Decode your contract’s events with your own ABI</li>
+      <!-- <li>Per-era staking history for validator tools</li> -->
     </ul>
     <p style="margin-top:20px"><a class="btn primary" href="app/">Open the app</a></p>
   </section>
 
   <section id="build" aria-labelledby="dev">
     <h2 id="dev">API reference</h2>
-    <p class="muted">Read-only, open CORS, no key needed.</p>
-<pre>curl "https://portalindex-98f0.onrender.com/asset_balances?order=balance.desc"
-curl "https://portalindex-98f0.onrender.com/events?pallet=eq.staking&amp;limit=5"
-curl "https://portalindex-98f0.onrender.com/indexer_gaps"</pre>
-    <p class="muted">Token amounts are 128-bit integers and arrive as plain JSON numbers, so parse them as big integers.</p>
-    <h3 style="margin-top:24px">Contract endpoints</h3>
-<pre>POST   /contracts                 { address, abi, name? }  →  { slug, url, manage_token }
-GET    /contracts                 recent registrations
-GET    /c/&lt;slug&gt;                 indexed range, decode progress, event counts
-GET    /c/&lt;slug&gt;/events          ?name=Transfer&amp;from_block=&amp;to_block=&amp;limit=50&amp;order=asc
-POST   /c/&lt;slug&gt;/resync         re-decode from the start   (Bearer manage_token)
-DELETE /c/&lt;slug&gt;                remove the contract        (Bearer manage_token)</pre>
-    <p class="muted">Registration is limited to 20 per address per day, and the registry holds 200 contracts.</p>
+    <p class="muted">Chain data is read-only, with open CORS and no key. Base URL: <code class="k" id="api-base"></code></p>
+    <div class="api">
+      <div class="api-nav" id="api-nav" aria-label="API endpoints"></div>
+      <div class="api-main" id="api-main"></div>
+    </div>
+    <p class="muted" style="margin-top:14px">Token amounts are 128-bit integers and arrive as plain JSON numbers, so parse them as big integers. Filter chain tables with PostgREST operators, for example <code class="k">?pallet=eq.staking&amp;limit=5</code>. Registration is limited to 20 per IP per day, and the registry holds 200 contracts.</p>
   </section>
 
 </div>
@@ -524,6 +556,166 @@ async function manage(method, path, okText) {
 }
 $("m-resync").onclick = () => manage("POST", "/resync", "Resync started. Decoding restarts from the beginning.");
 $("m-del").onclick = () => { if (confirm("Delete this contract and its decoded events?")) manage("DELETE", "", "Deleted."); };
+
+/* ---- API reference ---- */
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const hl = (s) => esc(s).replace(/("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, (m, str, colon, kw) => {
+  if (str) return colon ? `<span class="j-k">${str}</span>${colon}` : `<span class="j-s">${str}</span>`;
+  if (kw) return `<span class="j-b">${m}</span>`;
+  return `<span class="j-n">${m}</span>`;
+});
+// Pretty-print without losing precision on big integers.
+function pretty(text) {
+  const safe = text.replace(/(:\s*|\[\s*|,\s*)(-?\d{16,})(?=\s*[,}\]])/g, '$1"__BIG__$2"');
+  try { return JSON.stringify(JSON.parse(safe), null, 2).replace(/"__BIG__(-?\d+)"/g, "$1"); }
+  catch { return text; }
+}
+const mk = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text != null) x.textContent = text; return x; };
+
+const EP = [
+  { g: "Chain data", m: "GET", p: "/address/0x378598779d64d4c0ee191dbb98a487535e2b7048", t: "Look up an address",
+    d: "Maps a native (5…) or EVM (0x…) address to its pair and reads the live native balance from the chain.",
+    res: `{"input":"0x378598779d64d4c0ee191dbb98a487535e2b7048","h160":"0x378598779d64d4c0ee191dbb98a487535e2b7048","account":"5F…","balance":{"free":"1000000000000000","reserved":"0","frozen":"0"},"nonce":"0","funded":true,"source":"chain"}` },
+  { g: "Chain data", m: "GET", p: "/asset_balances?order=balance.desc&limit=2", t: "Token holders",
+    d: "Holders of each asset, ranked by balance. Filter one asset with asset_id=eq.2.",
+    res: `[{"asset_id":2,"holder":"5Grj5u…hjhwjk","balance":15000000000000000000}]` },
+  { g: "Chain data", m: "GET", p: "/account_balances?order=free.desc&limit=2", t: "Native tPOT balances",
+    d: "Native balances, largest first. Amounts are raw units with 14 decimals.",
+    res: `[{"account":"5F4ZyJ…XEBfYY","free":998301678870000000000,"reserved":0,"block":142000,"updated_at":"2026-10-22T06:00:26+00:00"}]` },
+  { g: "Chain data", m: "GET", p: "/nft_owners?limit=2", t: "NFT owners",
+    d: "Current owner of each NFT across the nfts and uniques pallets.",
+    res: `[{"pallet":"nfts","collection":0,"item":0,"owner":"5Exjao…qkhFV1"}]` },
+  { g: "Chain data", m: "GET", p: "/events?pallet=eq.balances&name=eq.Transfer&limit=1", t: "Events",
+    d: "Every indexed chain event with its decoded data. Filter by pallet, name or block_number, and page with limit and offset.",
+    res: `[{"block_number":129038,"event_index":4,"block_hash":"0x19e4…c209","extrinsic_index":1,"pallet":"balances","name":"Transfer","data":{"to":"5HdvUL…Wz8Bp","from":"5G1xGz…EL9HQ","amount":"1000000000000000"},"block_time":"2026-10-21T10:14:06+00:00"}]` },
+  { g: "Chain data", m: "GET", p: "/indexer_cursor", t: "Index status",
+    d: "The last finalized block Pindex has stored, and when it was updated.",
+    res: `[{"chain_key":"0xd4f9…83bd","last_block":142088,"updated_at":"2026-10-22T06:00:26+00:00"}]` },
+  { g: "Chain data", m: "GET", p: "/indexer_gaps?limit=1", t: "Data gaps",
+    d: "Block ranges the indexer could not read. Filled gaps are kept, with filled_at set.",
+    res: `[{"id":1,"from_block":107052,"to_block":107052,"reason":"processing error: disconnected from wss://…","detected_at":"2026-10-19T19:23:49+00:00","filled_at":"2026-10-21T08:02:11+00:00"}]` },
+
+  { g: "Contracts", m: "POST", p: "/contracts", t: "Register a contract",
+    d: "Send an address and a Solidity ABI. The response includes your URL and a manage token, which is shown once.",
+    body: `{"name":"my-token","address":"0xec531adadf19f263231a32310e9acb3191b898d2","abi":[...]}`,
+    jsBody: `{ name: "my-token", address: "0xec531adadf19f263231a32310e9acb3191b898d2", abi: yourAbiArray }`,
+    res: `{"slug":"my-token-a1b2c3","url":"https://portalindex-98f0.onrender.com/c/my-token-a1b2c3","events_url":"https://portalindex-98f0.onrender.com/c/my-token-a1b2c3/events","manage_token":"36ea1e40…","note":"Save manage_token now; it is shown once."}` },
+  { g: "Contracts", m: "GET", p: "/contracts", t: "Recent registrations",
+    d: "The most recently registered contracts. Manage tokens are never included.",
+    res: `[{"slug":"my-token-a1b2c3","name":"my-token","address":"0xec53…98d2","created_at":"2026-10-22T07:12:40+00:00"}]` },
+  { g: "Contracts", m: "GET", p: "/c/{slug}", t: "Contract status",
+    d: "Indexed range, decode progress and event counts. History is complete only from indexed_from_block.",
+    res: `{"slug":"my-token-a1b2c3","name":"my-token","address":"0xec53…98d2","indexed_from_block":1,"indexed_to_block":142088,"decoded_to_block":142088,"events_decoded":[{"event_name":"Transfer","n":12}],"abi_events":["Transfer"],"events_url":"https://portalindex-98f0.onrender.com/c/my-token-a1b2c3/events"}` },
+  { g: "Contracts", m: "GET", p: "/c/{slug}/events?limit=2", t: "Decoded events",
+    d: "Decoded events for your contract. Filter with name, from_block and to_block, order with order=asc, and set limit up to 1000. Large numbers inside args are strings.",
+    res: `[{"block_number":97201,"event_index":3,"event_name":"Transfer","args":{"from":"0x…","to":"0x…","value":"1000"},"block_time":"2026-10-20T14:02:18+00:00"}]` },
+  { g: "Contracts", m: "POST", p: "/c/{slug}/resync", t: "Resync",
+    d: "Re-decode from the beginning, for example after Pindex backfills older history.", auth: true,
+    res: `{"resync":"started"}` },
+  { g: "Contracts", m: "DELETE", p: "/c/{slug}", t: "Delete a contract",
+    d: "Removes the contract and its decoded events.", auth: true,
+    res: `{"deleted":true}` },
+];
+
+let sel = 0, atab = "curl";
+const live = {};
+const slugNow = () => (cur && cur.slug) || $("m-slug").value.trim();
+const fill = (p) => p.replace("{slug}", slugNow() || "my-token-a1b2c3");
+
+function snippets(e) {
+  const url = API + fill(e.p);
+  if (e.m === "GET") return { curl: `curl "${url}"`, js: `const res = await fetch("${url}");\nconst data = await res.json();` };
+  const parts = [`curl -X ${e.m} "${url}"`], h = [];
+  if (e.body) { parts.push(`-H "content-type: application/json"`); h.push(`"content-type": "application/json"`); }
+  if (e.auth) { parts.push(`-H "authorization: Bearer $MANAGE_TOKEN"`); h.push(`authorization: "Bearer " + manageToken`); }
+  if (e.body) parts.push(`-d '${e.body}'`);
+  const js = `const res = await fetch("${url}", {\n  method: "${e.m}",`
+    + (h.length ? `\n  headers: { ${h.join(", ")} },` : "")
+    + (e.body ? `\n  body: JSON.stringify(${e.jsBody || e.body}),` : "")
+    + `\n});\nconst data = await res.json();`;
+  return { curl: parts.join(" \\\n  "), js };
+}
+
+function renderNav() {
+  const nav = $("api-nav"); nav.textContent = "";
+  let last = "";
+  EP.forEach((e, i) => {
+    if (e.g !== last) { nav.append(mk("div", "api-g", e.g)); last = e.g; }
+    const b = mk("button", "ep" + (i === sel ? " on" : "")); b.type = "button";
+    b.append(mk("span", "mth " + e.m.toLowerCase(), e.m), mk("span", "pth", e.p.split("?")[0].replace("{slug}", "<slug>")));
+    b.onclick = () => {
+      sel = i;
+      nav.querySelectorAll(".ep").forEach((x, j) => x.classList.toggle("on", j === i)); // no rebuild, so the nav keeps its scroll
+      renderMain();
+    };
+    nav.append(b);
+  });
+}
+
+function renderMain(keep) {
+  const e = EP[sel], main = $("api-main"), L = live[sel];
+  const prev = keep ? ((main.querySelector(".con-body") || {}).scrollTop || 0) : 0;
+  main.textContent = "";
+
+  const bar = mk("div", "con-bar"), dots = mk("div", "con-dots");
+  dots.append(mk("i"), mk("i"), mk("i"));
+  bar.append(dots, mk("span", "mth " + e.m.toLowerCase(), e.m), mk("span", "con-title", fill(e.p)));
+
+  const body = mk("div", "con-body");
+  body.append(mk("h3", "con-h", e.t), mk("p", "con-d", e.d));
+
+  const sn = snippets(e);
+  const tabs = mk("div", "con-tabs");
+  for (const [k, label] of [["curl", "curl"], ["js", "javascript"]]) {
+    const b = mk("button", "con-tab", label); b.type = "button";
+    b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(atab === k));
+    b.onclick = () => { atab = k; renderMain(true); };
+    tabs.append(b);
+  }
+  const cb = copyBtn(() => sn[atab]); cb.className = "con-btn";
+  const h1 = mk("div", "con-sec"); h1.append(mk("span", null, "Request"), tabs, cb);
+  const req = mk("pre", "con-pre" + (atab === "curl" ? " cmd" : ""), sn[atab]);
+
+  const stat = mk("span", "con-stat" + (L && L.status ? (L.ok ? " ok" : " bad") : " idle"),
+    L && L.status ? `${L.status} · ${L.ms} ms` : "example");
+  const lbl = mk("span", null, "Response"); lbl.append(stat);
+  const h2 = mk("div", "con-sec"); h2.append(lbl);
+  if (e.m === "GET") {
+    const run = mk("button", "con-btn run", L && L.status ? "Run again" : "Run"); run.type = "button";
+    run.onclick = () => runEp(sel, run);
+    h2.append(run);
+  }
+  const out = mk("pre", "con-pre res");
+  let txt = pretty(L && L.text != null ? L.text : e.res);
+  if (txt.length > 3500) txt = txt.slice(0, 3500) + "\n… truncated";
+  out.innerHTML = hl(txt);
+
+  body.append(h1, req, h2, out);
+  if (L && (L.err || L.note)) body.append(mk("p", "con-d", L.err || L.note));
+  main.append(bar, body);
+  body.scrollTop = prev;
+}
+
+async function runEp(i, btn) {
+  const e = EP[i];
+  if (e.p.includes("{slug}") && !slugNow()) {
+    live[i] = { note: "Register a contract above, or enter a slug under “Already registered”, to run this live." };
+    return renderMain(true);
+  }
+  btn.disabled = true; btn.textContent = "Running…";
+  const wake = setTimeout(() => { btn.textContent = "Waking API…"; }, 4000);
+  const t0 = performance.now();
+  try {
+    const r = await fetch(API + fill(e.p));
+    const text = await r.text();
+    live[i] = { status: String(r.status), ok: r.ok, ms: Math.round(performance.now() - t0), text };
+  } catch { live[i] = { err: "Could not reach the API. Try again shortly." }; }
+  clearTimeout(wake);
+  renderMain(true);
+}
+
+$("api-base").textContent = API;
+renderNav(); renderMain();
 </script>
 </body>
 </html>
