@@ -59,3 +59,9 @@
 - Verified on the live testnet with 0x74fc…cc71: 5 distinct event types seen, 1 recovered (PoolWhitelisted(address,bool)). Pindex decoded 3 of 3 matching logs with correct pool and whitelisted values, and skipped the other 4 types without errors. Decode reached the chain head (block 133,289).
 - Known limits: history starts at the first indexed block (indexed_from_block). Gap fills are not decoded automatically, so use resync after a fill. Custom events need the real ABI. Solidity ABIs only, not ink! metadata.
 - Next: README (move contract decoding from Planned to Working, document /contracts and /c/<slug>/events), raw-logs endpoint for contracts without an ABI, backfill history from block 1 now that the node serves it.
+
+## 2026-10-24
+- README updated: status live on V3 testnet.
+- Added Links section and full contract-registry docs (endpoints + limits).
+- Documented checkpoint contract (address `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`, block 135953, deployer, deployment tx).
+- Working / Planned lists refreshed to match current code.

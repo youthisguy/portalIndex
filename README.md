@@ -4,8 +4,15 @@ A metadata-driven indexer for Portaldot V3. It reads runtime metadata and
 generates Postgres tables, a REST API and a GraphQL API for any pallet's
 events, with no per-pallet handler code.
 
-> Status: early development (Portaldot V3 Hacker House, Oct 14 - Nov 6, 2026).
-> Tested against the Portaldot V3 testnet and Westend Asset Hub.
+> Status: live on the Portaldot V3 testnet (Hacker House, Oct 14 - Nov 6, 2026).
+
+## Links
+- App: https://pindex.onrender.com/app/
+- Home and API docs: https://pindex.onrender.com/
+- Public REST API: https://portalindex-98f0.onrender.com
+- Architecture diagram: [docs/architecture.mermaid](docs/architecture.mermaid)
+- Development log (daily progress, including failures): [DEVLOG.md](DEVLOG.md)
+- Checkpoint contract on the V3 testnet: `0x6a5cce928e49c5062acD7aA876335a8041c7adc9` (details below)
 
 ## Why
 Portaldot builders who want to know who holds a token, who owns an NFT or what a contract emitted have to write their own block scraper first. Pindex does that work once: it indexes the chain into a database and serves it as a REST API and a searchable app, and it records any range it could not read.
@@ -37,15 +44,16 @@ Working:
 - Derived views: `asset_balances`, `asset_summary`, `nft_owners`, `nft_holdings`
 - Asset baseline snapshot from chain storage
 - Demo page (token holders, NFT owners, latest events)
-- Hosted read-only REST API on Render, with the ingester running in the same container
+- Search by address (native or EVM), block number or block hash, with shareable links
+- Contract registry: register an address and a Solidity ABI, read decoded events from a public URL
+- Hosted REST API on Render (read-only data, plus contract registration), with the ingester in the same container
 - H160 <-> native account mapping check via `reviveApi`
-- Checkpoint contract (`contracts/PortalIndexCheckpoint.sol`), compiled; not yet deployed
+- Checkpoint contract deployed on the V3 testnet (`contracts/PortalIndexCheckpoint.sol`)
 
 Planned:
-- Revive (EVM) and Contracts (ink!/WASM) `ContractEmitted` decoding with user-supplied ABI / metadata
-- Address mapping table (H160 <-> SS58)
 - Per-era staking snapshots from chain storage
-- Rolling state hash anchored on-chain by the checkpoint contract
+- Automatic rolling state hash anchored on-chain by the checkpoint contract
+- ink! (Contracts pallet) metadata decoding
 - `pindex init` one-command setup
 
 ## Quick start
@@ -101,7 +109,37 @@ Live demo page: https://pindex.onrender.com/ (reads the hosted API).
 
 Large integers (token balances) are returned as JSON numbers; parse them as big integers.
 
+## Contract registry
+Register a Solidity contract and read its decoded events from one URL:
+
+POST /contracts {{ address, abi, name? }} -> {{ slug, url, manage_token }}
+GET /c/<slug>/events ?name=Transfer&limit=50&order=asc
+POST /c/<slug>/resync (Bearer manage_token)
+DELETE /c/<slug> (Bearer manage_token)
+
+History starts at the first block Pindex indexed (`indexed_from_block` on the contract page). Only events are decoded, and only Solidity ABIs.
+
+```markdown
+## Checkpoint contract (deployed)
+`contracts/PortalIndexCheckpoint.sol` stores `(blockNumber, stateHash)` pairs published by its owner, and lets anyone verify a hash against the anchored one.
+
+|                   |                                               |
+| ----------------- | --------------------------------------------- |
+| Network           | Portaldot V3 testnet (EVM chain ID 420420777) |
+| Address           | `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`  |
+| Deployed at block | 135953                                        |
+| Deployer          | `0x378598779d64d4c0ee191dbb98a487535e2b7048`  |
+| Deployment tx     | `0xYOUR_64_HEX_TX_HASH`                       |
+```
+
+Pindex indexed its own deployment:
+
+curl "https://portalindex-98f0.onrender.com/revive_instantiated?contract=eq.0x6a5cce928e49c5062acd7aa876335a8041c7adc9"
+
+Publishing a checkpoint is a manual call for now. Automatic state-hash publishing is planned.
+
 ## Findings about the Portaldot V3 testnet
+
 - State history changes over time: on 2026-10-17 the public node could not serve events for old blocks (1, 1000, 50000), and on 2026-10-21 it served them from block 1 (`scripts/retention-check.ts`). Pindex records any range it cannot read in `indexer_gaps` and retries it.
 - Two contract runtimes are present: `Contracts` (WASM/ink!) and `Revive` (EVM).
   Both emit `ContractEmitted`.
