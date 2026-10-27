@@ -4,6 +4,8 @@ import http from "http";
 import { lookupAddress } from "./address-lookup.js";
 import { readdirSync, readFileSync } from "fs";
 import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
+import { isPruned, isTransient } from "./errors.js";
+import { gapInsert } from "./gaps.js";
 
 const WS = process.env.WS_URL;
 const DB = process.env.DATABASE_URL ?? "postgres://portalindex:portalindex@localhost:5432/portalindex";
@@ -157,7 +159,7 @@ async function fillGaps(api: ApiPromise, chainKey: string, typed: Map<string, Ev
         await processBlock(api, chainKey, n, typed);
       } catch (e: any) {
         ok = false;
-        if (/discarded|unknown block|4003/i.test(String(e?.message ?? e))) {
+        if (isPruned(String(e?.message ?? e))) {
           await pool.query("UPDATE indexer_gaps SET reason = 'unrecoverable: ' || reason WHERE id = $1", [g.id]);
           console.warn(`gap ${g.id} (blocks ${g.from_block}-${g.to_block}) can no longer be read from the node`);
         }
@@ -195,10 +197,8 @@ async function applyMigrations() {
 }
 
 async function recordGap(chainKey: string, from: number, to: number, reason: string) {
-  await pool.query(
-    `INSERT INTO indexer_gaps (chain_key, from_block, to_block, reason) VALUES ($1,$2,$3,$4)`,
-    [chainKey, from, to, reason]
-  );
+  const q = gapInsert(chainKey, from, to, reason);
+  await pool.query(q.text, q.values);
 }
 
 async function main() {
@@ -286,14 +286,14 @@ async function main() {
         } catch (e: any) {
           const msg = String(e?.message ?? e);
           // Non-archive node: old state is gone. Record the gap honestly and jump ahead.
-          if (/discarded|unknown block|4003/i.test(msg)) {
+          if (isPruned(msg)) {
             const resume = Math.max(next + 1, target - SAFE_WINDOW);
             await recordGap(chainKey, next, resume - 1, "state pruned by node");
             console.warn(`GAP: blocks ${next}-${resume - 1} unavailable (pruned). Resuming at ${resume}.`);
             next = resume;
           } else {
             // A block that keeps failing must not stall the indexer forever.
-            if (/disconnected|abnormal closure|econn|timeout|websocket|not connected/i.test(msg)) throw e; // transient: retry, never skip
+            if (isTransient(msg)) throw e; // transient: retry, never skip
             const tries = (failures.get(next) ?? 0) + 1;
             failures.set(next, tries);
             if (tries >= 3) {
