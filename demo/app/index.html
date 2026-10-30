@@ -947,9 +947,9 @@
           <input
             id="addr"
             type="text"
-            placeholder="Address, block number or block hash"
+            placeholder="Address, transaction hash, block number or block hash"
             autocomplete="off"
-            aria-label="Search by address, block number or block hash"
+            aria-label="Search by address, transaction hash, block number or block hash"
           />
           <button id="find" class="hero-search-btn" title="Search">
             <svg viewBox="0 0 24 24">
@@ -960,8 +960,7 @@
         </div>
 
         <p class="search-hint">
-          Search by <b>address</b> (5… or 0x…), <b>block number</b> or
-          <b>block hash</b>.
+          Search by <b>address</b> (5… or 0x…), <b>EVM transaction hash</b>, <b>block number</b> or <b>block hash</b>.
           <span class="try"
             >Try:
             <button
@@ -1416,7 +1415,7 @@
         const r = await fetch(base + path);
         if (!r.ok) throw new Error("HTTP " + r.status);
         const t = (await r.text()).replace(
-          /"(balance|total_held|amount|free|reserved)":(-?\d+)/g,
+          /"(balance|total_held|amount|free|reserved|value)":(-?\d+)/g,
           '"$1":"$2"'
         );
         return JSON.parse(t);
@@ -1929,7 +1928,7 @@
         );
         if (!evs.length)
           return say(
-            "That block isn't in the index. It may be older than Pindex's history, or not indexed yet."
+            /^0x/.test(q) ? "No transaction or block with that hash is indexed. It may be older than Pindex's history, or not indexed yet." : "That block isn't in the index. It may be older than Pindex's history, or not indexed yet."
           );
         const head = el(
           "div",
@@ -1996,13 +1995,61 @@
         history.replaceState(null, "", u);
       }
 
-      async function lookup() {
+      async function lookupTx(base, h, out) {
+  let rows = [];
+  try { rows = await get(base, "/evm_transactions?tx_hash=eq." + h.toLowerCase()); } catch (_) { return false; }
+  if (!rows.length) return false;
+  const t = rows[0];
+  const head = el("div", "sub", "EVM transaction ");
+  head.style.marginBottom = "12px";
+  head.style.overflowWrap = "anywhere";
+  head.append(makeAddressElement(t.tx_hash));
+  head.append(makeShareButton());
+  out.append(head);
+  const box = el("div", "rows");
+  box.style.marginBottom = "16px";
+  const add = (label, v) => {
+    const r = el("div", "row");
+    r.append(el("span", null, label), typeof v === "object" ? v : el("span", "num", String(v)));
+    box.append(r);
+  };
+  add("Status", t.success === true ? "Success" : t.success === false ? "Failed" : "Unknown");
+  add("Block", "#" + fmt(t.block_number) + (t.block_time ? " · " + ago(t.block_time) : ""));
+  add("From", t.from_addr ? makeAddressElement(t.from_addr) : "unknown");
+  add("To", t.to_addr ? makeAddressElement(t.to_addr) : "Contract creation");
+  add("Value (raw units)", t.value == null ? "n/a" : fmt(t.value));
+  if (t.selector) add("Method selector", t.selector);
+  add("Input size", (t.input_bytes == null ? 0 : t.input_bytes) + " bytes");
+  add("Nonce", t.nonce == null ? "n/a" : t.nonce);
+  out.append(box);
+  let evs = [];
+  try { evs = await get(base, "/events?block_number=eq." + t.block_number + "&extrinsic_index=eq." + t.extrinsic_index + "&order=event_index.asc&limit=200"); } catch (_) {}
+  if (evs.length) {
+    const title = el("h3", null, "Events in this transaction (" + evs.length + ")");
+    title.style.fontSize = "1rem";
+    title.style.margin = "0 0 8px 0";
+    out.append(title);
+    const list = el("div", "events");
+    evs.forEach((e) => {
+      const r = el("details", "evd");
+      const sum = el("summary", null);
+      sum.append(el("span", "mono", e.pallet + "." + e.name), el("span", "pv mono", JSON.stringify(e.data)));
+      r.append(sum, el("pre", null, JSON.stringify(e.data, null, 2)));
+      list.append(r);
+    });
+    out.append(list);
+  }
+  return true;
+}
+
+async function lookup() {
         const base = $("#api").value.replace(/\/$/, "");
         let a = $("#addr").value.trim(); const out = el("div"); $("#look").replaceChildren(out);
         setQuery(a);
         if (!a) return;
         const say = (m) => out.append(el("div", "empty", m));
         try {
+          if (/^0x[0-9a-fA-F]{64}$/.test(a) && (await lookupTx(base, a, out))) return;
           if (/^\d{1,12}$/.test(a) || /^0x[0-9a-fA-F]{64}$/.test(a))
             return await lookupBlock(base, a, out, say);
           let h160 = "",

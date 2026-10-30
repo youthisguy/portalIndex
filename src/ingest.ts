@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from "fs";
 import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
 import { isPruned, isTransient } from "./errors.js";
 import { gapInsert } from "./gaps.js";
+import { EVM_TX_INSERT, evmTxValues, extractEvmTxs, type EvmTx } from "./evm-tx.js";
 
 const WS = process.env.WS_URL;
 const DB = process.env.DATABASE_URL ?? "postgres://portalindex:portalindex@localhost:5432/portalindex";
@@ -113,6 +114,29 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
   ]);
   const blockTime = new Date(Number(now.toString()));
 
+  // EVM transactions: the Ethereum hash is keccak256 of each revive.ethTransact payload (see src/evm-tx.ts).
+  // Best effort: if the block body cannot be read, the block is still indexed and the transactions are skipped.
+  const success = new Map<number, boolean>();
+  let hasExtrinsics = false;
+  for (const { event, phase } of events) {
+    if (!phase.isApplyExtrinsic) continue;
+    const idx = phase.asApplyExtrinsic.toNumber();
+    if (idx >= 1) hasExtrinsics = true;
+    if (event.section === "system" && event.method === "ExtrinsicSuccess") success.set(idx, true);
+    if (event.section === "system" && event.method === "ExtrinsicFailed") success.set(idx, false);
+  }
+  let evmTxs: EvmTx[] = [];
+  if (hasExtrinsics) {
+    try {
+      const signedBlock: any = await api.rpc.chain.getBlock(hash);
+      evmTxs = extractEvmTxs(signedBlock.block.extrinsics, success);
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      if (isTransient(msg)) throw e; // connection trouble: retry the block
+      console.warn(`block ${n}: could not read extrinsics (${msg.slice(0, 80)}); EVM transactions skipped`);
+    }
+  }
+
   const touched = new Set<string>();
   const client = await pool.connect();
   try {
@@ -127,6 +151,16 @@ async function processBlock(api: ApiPromise, chainKey: string, n: number, typed:
         [n, i, hash.toHex(), extIdx, event.section, event.method, JSON.stringify(eventData(event)), blockTime]
       );
       (await insertTyped(client, typed, event, n, i, hash.toHex(), extIdx, blockTime)).forEach((a) => touched.add(a));
+    }
+    for (const t of evmTxs) {
+      await client.query("SAVEPOINT evm_tx"); // a failure here must never block the block itself
+      try {
+        await client.query(EVM_TX_INSERT, evmTxValues(t, n, hash.toHex(), blockTime));
+        await client.query("RELEASE SAVEPOINT evm_tx");
+      } catch (e: any) {
+        await client.query("ROLLBACK TO SAVEPOINT evm_tx");
+        console.warn(`block ${n}: EVM transaction ${t.hash} not stored (${String(e?.message ?? e).slice(0, 80)})`);
+      }
     }
     await client.query(
       `INSERT INTO indexer_cursor (chain_key, last_block) VALUES ($1,$2)

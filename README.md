@@ -21,9 +21,11 @@ It reads runtime metadata and auto-generates Postgres tables, a REST API, and a 
 ---
 
 ### The Problem
-Every Portaldot builder who needs token holders, NFT owners, or decoded contract events ends up writing the same block scraper.
+Portaldot V3 has no EVM transaction explorer yet. The node console only opens block numbers, and the organizers confirmed a dedicated explorer is still to come. So every builder who needs to verify a transaction, or who needs token holders, NFT owners or decoded contract events, ends up writing the same block scraper.
 
 Pindex does that work **once** for the entire ecosystem and exposes it as a free, public, production-ready API.
+
+This already happened in practice: [PotKit](https://github.com/itsjusttu/potkit-portaldot) (Track 4, RWA) hit exactly this gap, found no explorer that resolves EVM transaction hashes, and now uses Pindex to verify its on-chain lifecycle.
 
 ---
 
@@ -36,7 +38,7 @@ Pindex does that work **once** for the entire ecosystem and exposes it as a free
 | **Public contract registry** | Paste any Solidity address + ABI → instant public endpoint for decoded events. |
 | **Honest coverage** | Public `indexer_gaps` table. Every unreadable range is recorded, retried, and marked. |
 | **Ready-to-use APIs** | REST (PostgREST) + GraphQL (PostGraphile). Open CORS, no API key required. |
-| **Shareable search** | Search any native (`5…`) or EVM (`0x…`) address, block, or contract. Every result has a shareable link. |
+| **Shareable search** | Search any native (`5…`) or EVM (`0x…`) address, EVM transaction hash, block, or contract. Every result has a shareable link. |
 
 ---
 
@@ -154,7 +156,8 @@ Pindex is designed specifically around V3 capabilities:
 6. SQL views derive current state (asset balances, NFT owners) from the events,
    layered on a storage snapshot for anything that existed before indexing began.
 7. A decode worker turns raw `revive.ContractEmitted` rows into readable events for every registered contract, using the ABI the owner supplied.
-8. PostgREST serves tables and views as a REST API; PostGraphile serves GraphQL.
+8. For blocks with non-inherent extrinsics, the ingester reads the block body and stores each EVM transaction (`revive.ethTransact`) in `evm_transactions`, keyed by its Ethereum hash (keccak-256 of the signed payload).
+9. PostgREST serves tables and views as a REST API; PostGraphile serves GraphQL.
 
 Choose pallets with an env var, no code changes:
 
@@ -170,7 +173,8 @@ Working:
 - Derived views: `asset_balances`, `asset_summary`, `nft_owners`, `nft_holdings`
 - Asset baseline snapshot from chain storage
 - Demo page (token holders, NFT owners, latest events)
-- Search by address (native or EVM), block number or block hash, with shareable links
+- Search by address (native or EVM), EVM transaction hash, block number or block hash, with shareable links
+- EVM transactions indexed from `revive.ethTransact` extrinsics (hash, sender, recipient, value, method selector, nonce, status), served at `/evm_transactions`
 - Contract registry: register an address and a Solidity ABI from the home page or the API, read decoded events from a public URL
 - Hosted REST API on Render (read-only data, plus contract registration), with the ingester in the same container
 - H160 <-> native account mapping check via `reviveApi`
@@ -231,11 +235,12 @@ One command, no database and no network needed:
 
     npm test
 
-This runs 38 unit tests with [Vitest](https://vitest.dev) covering:
+This runs 42 unit tests with [Vitest](https://vitest.dev) covering:
 - **Metadata parsing and table generation** (`test/unit/typed.test.ts`): type mapping, column naming, idempotent inserts, exact u128 handling
 - **Event decoding** (`test/unit/decode.test.ts`): Solidity event logs decoded with a user ABI
 - **Gap recording and error handling** (`test/unit/errors-gaps.test.ts`): which failures are retried and which become gaps
 - **Address mapping** (`test/unit/address.test.ts`): H160 ↔ SS58, using a vector taken from the live chain
+- **EVM transaction hashes** (`test/unit/evm-tx.test.ts`): hash, sender and field extraction for EIP-1559, legacy and contract-creation transactions
 
 A second command checks the running API's response shapes, including that the checkpoint contract's deployment was indexed:
 
@@ -255,6 +260,7 @@ Live demo page: https://pindex.onrender.com/ (reads the hosted API).
     curl "https://portalindex-98f0.onrender.com/asset_balances"
     curl "https://portalindex-98f0.onrender.com/events?order=block_number.desc&limit=5"
     curl "https://portalindex-98f0.onrender.com/indexer_gaps"
+    curl "https://portalindex-98f0.onrender.com/evm_transactions?to_addr=eq.0x6a5cce928e49c5062acd7aa876335a8041c7adc9&order=block_number.desc&limit=5"
 
 Large integers (token balances) are returned as JSON numbers; parse them as big integers.
 
@@ -323,6 +329,13 @@ Expected `args` for that event (addresses use checksum case):
 
     curl "https://portalindex-98f0.onrender.com/indexer_gaps"
 
+**5. Search an EVM transaction by its hash.** The deployment transaction of the checkpoint contract, and a later `publish` call to it (block 254845, one `Checkpoint` event):
+
+    curl "https://portalindex-98f0.onrender.com/evm_transactions?tx_hash=eq.0xe898bbfd69f401b28ec0769fdc8b7dbadf5e3f8a2cfb9bf7cb71215a3392be32"
+    curl "https://portalindex-98f0.onrender.com/evm_transactions?tx_hash=eq.0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609"
+
+The hash is the same one the chain's EVM RPC reports (`eth_getTransactionByHash`) and that wallets show. Open it in the app: https://pindex.onrender.com/app/?q=0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609
+
 ## Limits
 - Derived state replays events, so it is only as complete as the events
   captured plus the baseline snapshot. Native token balances are not derived.
@@ -331,6 +344,7 @@ Expected `args` for that event (addresses use checksum case):
 - Schema changes after runtime upgrades are not migrated yet.
 - Registration needs no account, so the hosted instance has basic anti-abuse caps: 20 registrations per IP per day and 200 contracts in total. Self-hosting has no such limit unless you set one.
 - Gap fills are not decoded automatically for registered contracts; use `POST /c/<slug>/resync`.
+- Only EVM transactions are searchable. Native extrinsic hashes (for example a plain transfer) are not stored.
 
 ## Scripts
 - `scripts/dump-metadata.ts`: pallets, events and runtime APIs of any chain
@@ -339,6 +353,8 @@ Expected `args` for that event (addresses use checksum case):
 - `scripts/snapshot-assets.ts`: stores the asset baseline
 - `scripts/era-scan.ts`: staking era data readable from storage
 - `scripts/map-address.ts`: H160 <-> native account mapping
+- `scripts/tx-check.ts`: derives the Ethereum hash of every EVM transaction in a block and compares it with the chain's EVM RPC
+- `scripts/backfill-txs.ts`: fills `evm_transactions` for blocks that were already indexed
 
 ## Third-party software
 - polkadot-js (`@polkadot/api`), Apache-2.0

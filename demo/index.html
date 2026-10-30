@@ -143,6 +143,12 @@ section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--i
 .con-stat{text-transform:none;letter-spacing:0;margin-left:8px;font-size:.78rem}
 .con-stat.ok{color:#4ade80}.con-stat.bad{color:#f87171}.con-stat.idle{color:#64748b}
 .j-k{color:#c4b5fd}.j-s{color:#67e8f9}.j-n{color:#fbbf24}.j-b{color:#f9a8d4}
+.con-url{display:flex;align-items:center;background:#060a12;border:1px solid #243049;border-radius:8px;margin:0 0 8px;min-width:0}
+.con-url:focus-within,.con-edit:focus{border-color:#3b82f6}
+.con-base{flex:none;padding:0 0 0 12px;font:400 .8rem "JetBrains Mono",monospace;color:#64748b;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.con-in,.con-edit{background:transparent;border:0;color:#e2e8f0;font:400 .8rem/1.6 "JetBrains Mono",monospace;padding:10px 12px 10px 0;width:100%;min-width:0;outline:none}
+.con-edit{display:block;background:#060a12;border:1px solid #243049;border-radius:8px;padding:10px 12px;min-height:130px;resize:vertical;margin:0 0 8px}
+.con-hint{color:#64748b;font-size:.75rem;margin:0 0 8px}
 /* footer */
 .brand-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
 .brand-icon{height:28px;width:auto;display:block;flex-shrink:0}
@@ -319,6 +325,7 @@ section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--i
       <li>Look up any address that has appeared on chain, by native (5...) or EVM (0x...) form: balances, NFTs and recent events.</li>
       <li>See token holders ranked by balance, and who owns each NFT.</li>
       <li>Browse the latest events from every indexed pallet, including staking and sessions.</li>
+      <li>Search any EVM transaction by its hash, and list the transactions sent to a contract.</li>
       <li>Query the same data over REST with filters and pagination.</li>
       <li>Decode your contract’s events with your own ABI</li>
       <!-- <li>Per-era staking history for validator tools</li> -->
@@ -594,6 +601,9 @@ const EP = [
   { g: "Chain data", m: "GET", p: "/indexer_gaps?limit=1", t: "Data gaps",
     d: "Block ranges the indexer could not read. Filled gaps are kept, with filled_at set.",
     res: `[{"id":1,"from_block":107052,"to_block":107052,"reason":"processing error: disconnected from wss://…","detected_at":"2026-10-19T19:23:49+00:00","filled_at":"2026-10-21T08:02:11+00:00"}]` },
+  { g: "Chain data", m: "GET", p: "/evm_transactions?tx_hash=eq.0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609", t: "EVM transactions",
+    d: "Look up an EVM transaction by its Ethereum hash, the same one wallets and eth_getTransactionByHash show. Or list a contract's transactions with to_addr=eq.0x… and order=block_number.desc. Fields include sender, recipient, value, nonce, the method selector (first 4 bytes of the input) and success.",
+    res: `[{"tx_hash":"0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609","block_number":254845,"extrinsic_index":1,"block_hash":"0x1bc57ba1289bb9886ff93b8acf91af7ff2939444952e377bcddb41ff501c08e6","block_time":"2026-10-30T16:19:24+00:00","from_addr":"0x378598779d64d4c0ee191dbb98a487535e2b7048","to_addr":"0x6a5cce928e49c5062acd7aa876335a8041c7adc9","value":0,"nonce":4,"tx_type":2,"selector":"0xc5a2d352","input_bytes":68,"success":true}]` },
 
   { g: "Contracts", m: "POST", p: "/contracts", t: "Register a contract",
     d: "Send an address and a Solidity ABI. The response includes your URL and a manage token, which is shown once.",
@@ -619,19 +629,24 @@ const EP = [
 
 let sel = 0, atab = "curl";
 const live = {};
+const edits = {};
+const defBody = () => JSON.stringify({ name: "my-token", address: "0xec531adadf19f263231a32310e9acb3191b898d2", abi: SAMPLE }, null, 2);
 const slugNow = () => (cur && cur.slug) || $("m-slug").value.trim();
 const fill = (p) => p.replace("{slug}", slugNow() || "my-token-a1b2c3");
 
-function snippets(e) {
-  const url = API + fill(e.p);
+function snippets(e, path, bodyText) {
+  const url = API + path;
   if (e.m === "GET") return { curl: `curl "${url}"`, js: `const res = await fetch("${url}");\nconst data = await res.json();` };
   const parts = [`curl -X ${e.m} "${url}"`], h = [];
-  if (e.body) { parts.push(`-H "content-type: application/json"`); h.push(`"content-type": "application/json"`); }
+  let compact = bodyText;
+  try { if (bodyText != null) compact = JSON.stringify(JSON.parse(bodyText)); } catch {}
+  const hasBody = bodyText != null || e.body;
+  if (hasBody) { parts.push(`-H "content-type: application/json"`); h.push(`"content-type": "application/json"`); }
   if (e.auth) { parts.push(`-H "authorization: Bearer $MANAGE_TOKEN"`); h.push(`authorization: "Bearer " + manageToken`); }
-  if (e.body) parts.push(`-d '${e.body}'`);
+  if (hasBody) parts.push(`-d '${bodyText != null ? compact : e.body}'`);
   const js = `const res = await fetch("${url}", {\n  method: "${e.m}",`
     + (h.length ? `\n  headers: { ${h.join(", ")} },` : "")
-    + (e.body ? `\n  body: JSON.stringify(${e.jsBody || e.body}),` : "")
+    + (hasBody ? `\n  body: JSON.stringify(${bodyText != null ? compact : (e.jsBody || e.body)}),` : "")
     + `\n});\nconst data = await res.json();`;
   return { curl: parts.join(" \\\n  "), js };
 }
@@ -654,17 +669,24 @@ function renderNav() {
 
 function renderMain(keep) {
   const e = EP[sel], main = $("api-main"), L = live[sel];
+  const ed = edits[sel] || (edits[sel] = {});
   const prev = keep ? ((main.querySelector(".con-body") || {}).scrollTop || 0) : 0;
   main.textContent = "";
 
+  const path = () => (ed.p != null ? ed.p : fill(e.p));
+  const hasBody = e.m === "POST" && !e.auth;
+  const bodyNow = () => (ed.body != null ? ed.body : defBody());
+  const snNow = () => snippets(e, path(), hasBody ? bodyNow() : null);
+  const canRun = e.m === "GET" || hasBody;
+
   const bar = mk("div", "con-bar"), dots = mk("div", "con-dots");
+  const title = mk("span", "con-title", path());
   dots.append(mk("i"), mk("i"), mk("i"));
-  bar.append(dots, mk("span", "mth " + e.m.toLowerCase(), e.m), mk("span", "con-title", fill(e.p)));
+  bar.append(dots, mk("span", "mth " + e.m.toLowerCase(), e.m), title);
 
   const body = mk("div", "con-body");
   body.append(mk("h3", "con-h", e.t), mk("p", "con-d", e.d));
 
-  const sn = snippets(e);
   const tabs = mk("div", "con-tabs");
   for (const [k, label] of [["curl", "curl"], ["js", "javascript"]]) {
     const b = mk("button", "con-tab", label); b.type = "button";
@@ -672,41 +694,71 @@ function renderMain(keep) {
     b.onclick = () => { atab = k; renderMain(true); };
     tabs.append(b);
   }
-  const cb = copyBtn(() => sn[atab]); cb.className = "con-btn";
+  const cb = copyBtn(() => snNow()[atab]); cb.className = "con-btn";
   const h1 = mk("div", "con-sec"); h1.append(mk("span", null, "Request"), tabs, cb);
-  const req = mk("pre", "con-pre" + (atab === "curl" ? " cmd" : ""), sn[atab]);
+  body.append(h1);
+
+  const req = mk("pre", "con-pre" + (atab === "curl" ? " cmd" : ""), snNow()[atab]);
+  const paint = () => { req.textContent = snNow()[atab]; title.textContent = path(); };
+
+  if (canRun) {
+    const row = mk("div", "con-url");
+    const inp = mk("input", "con-in"); inp.type = "text"; inp.value = path(); inp.spellcheck = false;
+    inp.setAttribute("aria-label", "Request path and query");
+    inp.oninput = () => { ed.p = inp.value; paint(); };
+    row.append(mk("span", "con-base", API), inp);
+    body.append(row);
+    if (hasBody) {
+      const ta = mk("textarea", "con-edit"); ta.value = bodyNow(); ta.spellcheck = false;
+      ta.setAttribute("aria-label", "Request body (JSON)");
+      ta.oninput = () => { ed.body = ta.value; paint(); };
+      body.append(ta);
+    }
+    body.append(mk("p", "con-hint", hasBody ? "Edit the path or the JSON body, then press Run. This registers a real contract." : "Edit the path or query string, then press Run."));
+  }
+  body.append(req);
 
   const stat = mk("span", "con-stat" + (L && L.status ? (L.ok ? " ok" : " bad") : " idle"),
     L && L.status ? `${L.status} · ${L.ms} ms` : "example");
   const lbl = mk("span", null, "Response"); lbl.append(stat);
   const h2 = mk("div", "con-sec"); h2.append(lbl);
-  if (e.m === "GET") {
+  if (canRun) {
+    const reset = mk("button", "con-btn", "Reset"); reset.type = "button";
+    reset.onclick = () => { delete edits[sel]; renderMain(true); };
     const run = mk("button", "con-btn run", L && L.status ? "Run again" : "Run"); run.type = "button";
     run.onclick = () => runEp(sel, run);
-    h2.append(run);
+    h2.append(reset, run);
   }
   const out = mk("pre", "con-pre res");
   let txt = pretty(L && L.text != null ? L.text : e.res);
   if (txt.length > 3500) txt = txt.slice(0, 3500) + "\n… truncated";
   out.innerHTML = hl(txt);
 
-  body.append(h1, req, h2, out);
+  body.append(h2, out);
   if (L && (L.err || L.note)) body.append(mk("p", "con-d", L.err || L.note));
   main.append(bar, body);
   body.scrollTop = prev;
 }
 
 async function runEp(i, btn) {
-  const e = EP[i];
-  if (e.p.includes("{slug}") && !slugNow()) {
+  const e = EP[i], ed = edits[i] || {};
+  if (ed.p == null && e.p.includes("{slug}") && !slugNow()) {
     live[i] = { note: "Register a contract above, or enter a slug under “Already registered”, to run this live." };
     return renderMain(true);
+  }
+  let path = ed.p != null ? ed.p : fill(e.p);
+  if (!path.startsWith("/")) path = "/" + path;
+  const opt = {};
+  if (e.m === "POST") {
+    const text = ed.body != null ? ed.body : defBody();
+    try { JSON.parse(text); } catch { live[i] = { err: "The request body is not valid JSON." }; return renderMain(true); }
+    opt.method = "POST"; opt.headers = { "content-type": "application/json" }; opt.body = text;
   }
   btn.disabled = true; btn.textContent = "Running…";
   const wake = setTimeout(() => { btn.textContent = "Waking API…"; }, 4000);
   const t0 = performance.now();
   try {
-    const r = await fetch(API + fill(e.p));
+    const r = await fetch(API + path, opt);
     const text = await r.text();
     live[i] = { status: String(r.status), ok: r.ok, ms: Math.round(performance.now() - t0), text };
   } catch { live[i] = { err: "Could not reach the API. Try again shortly." }; }

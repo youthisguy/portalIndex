@@ -65,3 +65,11 @@
 - Added Links section and full contract-registry docs (endpoints + limits).
 - Documented checkpoint contract (address `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`, block 135953, deployer, deployment tx).
 - Working / Planned lists refreshed to match current code.
+
+## 2026-10-30
+- EVM transaction hash search added. On this chain an EVM transaction is a `revive.ethTransact` extrinsic carrying the signed Ethereum transaction. The indexer reads the block body when a block has more than the timestamp inherent, and stores the hash, sender, recipient, value, method selector, nonce and success status in a new `evm_transactions` table (`sql/008_evm_transactions.sql`, `src/evm-tx.ts`). If a block body cannot be read, the block is still indexed and only its transaction rows are skipped.
+- Hash derivation checked against the chain (`scripts/tx-check.ts`): the chain's EVM RPC lists the checkpoint deployment in block 135953 as `0xe898bbfd69f401b28ec0769fdc8b7dbadf5e3f8a2cfb9bf7cb71215a3392be32`, which equals keccak256 of the `ethTransact` payload. The hash recorded in the README (`0x6459ab69…eb33`) is unknown to the RPC (`eth_getTransactionByHash` returns null), so the README value was wrong and is corrected.
+- Explorer search accepts a transaction hash and shows status, block, sender, recipient (or contract creation), value, method selector, nonce and the events emitted by that transaction. The change is applied with `apply-tx-search.mjs`, which writes nothing unless every target text matches exactly once and refuses a second run.
+- Tests: 42 unit tests pass, including 4 new ones for transaction hashing (EIP-1559, legacy, contract creation, undecodable payload).
+- Limits: only EVM transactions are searchable. Native extrinsic hashes (for example a plain transfer) are not stored. Each new block with transactions costs one extra node call.
+- Next: create the table on the hosted database, backfill with `scripts/backfill-txs.ts` (checkpoint block first), deploy, then add "Search by EVM transaction hash" to the README Status list and the deployment transaction to the Evidence section.
