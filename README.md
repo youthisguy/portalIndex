@@ -68,68 +68,68 @@ This already happened in practice: [PotKit](https://github.com/itsjusttu/potkit-
 
 ```mermaid
 flowchart TB
-    subgraph Chain["Portaldot V3 Testnet"]
-        RPC["Substrate RPC (wss)"]
-        META["Runtime Metadata"]
-        REV["Revive pallet events"]
-        NATIVE["Native pallets<br/>Assets • Uniques • Nfts • Balances"]
-        RPC --- META
-        RPC --- REV
-        RPC --- NATIVE
-    end
+subgraph Chain["Portaldot V3 Testnet"]
+RPC["Substrate RPC (wss)"]
+META["Runtime Metadata"]
+REV["Revive pallet<br/>ContractEmitted • ethTransact"]
+NATIVE["Native pallets<br/>Assets • Uniques • Nfts • Balances"]
+RPC --- META
+RPC --- REV
+RPC --- NATIVE
+end
 
-    subgraph Ingest["Pindex Ingester"]
-        FIN["Finalized block walker + backfill"]
-        DEC["Event / extrinsic decoder"]
-        SCHEMA["Schema generator<br/>(metadata → SQL)"]
-        ABI["ABI decoder<br/>(user-supplied)"]
-        MAP["Address mapper<br/>(H160 ↔ SS58 via reviveApi)"]
-        FIN --> DEC
-        DEC --> ABI
-        DEC --> MAP
-    end
+subgraph Ingest["Pindex Ingester"]
+FIN["Finalized block walker + backfill"]
+DEC["Event / extrinsic decoder"]
+SCHEMA["Schema generator<br/>(metadata → SQL)"]
+ABI["ABI decoder<br/>(user-supplied)"]
+MAP["Address mapper<br/>(H160 ↔ SS58 via reviveApi)"]
+EVMTX["EVM tx extractor<br/>keccak256 of ethTransact payload"]
+FIN --> DEC
+DEC --> ABI
+DEC --> MAP
+DEC --> EVMTX
+end
 
-    subgraph Store["PostgreSQL"]
-        GEN["Generic tables<br/>events • extrinsics"]
-        TYPED["Typed tables<br/>(auto-generated)"]
-        EVM["Decoded contract logs"]
-        ADDR["Address map"]
-        CKPT["Cursor + checkpoints"]
-    end
+subgraph Store["PostgreSQL"]
+GEN["Generic tables<br/>events • extrinsics"]
+TYPED["Typed tables<br/>(auto-generated)"]
+EVM["Decoded contract logs"]
+TXS["evm_transactions<br/>(hash, from, to, value, selector)"]
+ADDR["Address map"]
+CKPT["Cursor + gaps"]
+end
 
-    subgraph API["API Layer"]
-        REST["REST API (PostgREST)"]
-        GQL["GraphQL (PostGraphile)"]
-        REST --- GQL
-    end
+subgraph API["API Layer"]
+REST["REST API (PostgREST)"]
+GQL["GraphQL (PostGraphile)"]
+REST --- GQL
+end
 
-    subgraph Clients["Consumers"]
-        DApps["Any dApp"]
-        Tools["Dashboards & tools"]
-        Explorers["Custom explorers"]
-    end
+subgraph Clients["Consumers"]
+DApps["Any dApp"]
+Tools["Dashboards & tools"]
+Explorers["Custom explorers"]
+end
 
-    ANCHOR["On-chain Checkpoint Contract"]
-    CLI["One-command setup"]
+ANCHOR["On-chain Checkpoint Contract"]
 
-    META --> SCHEMA
-    SCHEMA --> GEN
-    SCHEMA --> TYPED
-    RPC --> FIN
-    DEC --> GEN
-    DEC --> TYPED
-    ABI --> EVM
-    MAP --> ADDR
-    FIN --> CKPT
-    Store --> REST
-    Store --> GQL
-    REST --> DApps
-    GQL --> Tools
-    GQL --> Explorers
-    CKPT --> ANCHOR
-    CLI -.-> Ingest
-    CLI -.-> Store
-    CLI -.-> API
+META --> SCHEMA
+SCHEMA --> GEN
+SCHEMA --> TYPED
+RPC --> FIN
+DEC --> GEN
+DEC --> TYPED
+ABI --> EVM
+EVMTX --> TXS
+MAP --> ADDR
+FIN --> CKPT
+Store --> REST
+Store --> GQL
+REST --> DApps
+GQL --> Tools
+GQL --> Explorers
+CKPT --> ANCHOR
 ```
 
 ---
