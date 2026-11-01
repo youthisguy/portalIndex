@@ -35,8 +35,21 @@ ING_PID=$!
 ) &
 REG_PID=$!
 
-trap 'kill $PG_PID $ING_PID $REG_PID 2>/dev/null; exit 0' TERM INT
+# Automatic checkpoints: only started when a publisher key is configured (see docs/checkpoints.md).
+CP_PID=""
+if [ -n "${CHECKPOINT_PRIVATE_KEY:-}" ]; then
+  (
+    while true; do
+      npx tsx src/checkpoint.ts
+      echo "checkpoint worker exited; restarting in 60s"
+      sleep 60
+    done
+  ) &
+  CP_PID=$!
+fi
+
+trap 'kill $PG_PID $ING_PID $REG_PID $CP_PID 2>/dev/null; exit 0' TERM INT
 wait -n
 echo "a process exited; stopping the container so it restarts"
-kill $PG_PID $ING_PID $REG_PID 2>/dev/null
+kill $PG_PID $ING_PID $REG_PID $CP_PID 2>/dev/null
 exit 1

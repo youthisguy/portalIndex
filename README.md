@@ -283,10 +283,10 @@ History starts at the first block Pindex indexed (`indexed_from_block` on the co
 |                   |                                               |
 | ----------------- | --------------------------------------------- |
 | Network           | Portaldot V3 testnet (EVM chain ID 420420777) |
-| Address           | `0x6a5cce928e49c5062acD7aA876335a8041c7adc9`  |
-| Deployed at block | 135953                                        |
+| Address           | `0x4DF57190DEbe09D922D1AfE9458AfF439bcd2Cb1`  |
+| Deployed at block | 281,121                                        |
 | Deployer          | `0x378598779d64d4c0ee191dbb98a487535e2b7048`  |
-| Deployment tx     | `0x6459ab692c450bb9088b38673bf7eb1b76346f6400706372abf111acfe93eb33` |
+| Deployment tx     | [`0xea1741d8b71ed0a0513af584526b5df8adb380261149de2e80b2e0c84d9c64c0`](https://pindex.onrender.com/app/?q=0xea1741d8b71ed0a0513af584526b5df8adb380261149de2e80b2e0c84d9c64c0) |
 
 Publishing a checkpoint is a manual call for now. Automatic state-hash publishing is planned.
 
