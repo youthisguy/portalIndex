@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from "fs";
 import { buildEventMap, ensureTables, insertTyped, type EventTable } from "./typed.js";
 import { isPruned, isTransient } from "./errors.js";
 import { gapInsert } from "./gaps.js";
+import { foreignChain, nodeFarBehind } from "./chain-guard.js";
 import { EVM_TX_INSERT, evmTxValues, extractEvmTxs, type EvmTx } from "./evm-tx.js";
 
 const WS = process.env.WS_URL;
@@ -76,7 +77,7 @@ async function syncNativeBalances(api: ApiPromise) {
   let startKey: string | undefined;
   let total = 0;
   for (;;) {
-    const page: any[] = await at.query.system.account.entriesPaged({ pageSize: 200, startKey });
+    const page: any[] = await at.query.system.account.entriesPaged({ args: [], pageSize: 200, startKey });
     if (!page.length) break;
     const acc: string[] = [], free: string[] = [], res: string[] = [];
     for (const [k, v] of page) { acc.push(k.args[0].toString()); free.push(v.data.free.toString()); res.push(v.data.reserved.toString()); }
@@ -261,6 +262,15 @@ async function main() {
   );
 
   await pool.query("ALTER TABLE indexer_gaps ADD COLUMN IF NOT EXISTS filled_at TIMESTAMPTZ");
+
+  // One database holds one chain: events are not stored per chain, so a second chain would silently mix in.
+  const known = await pool.query("SELECT chain_key FROM indexer_cursor").then((r) => r.rows.map((x: any) => x.chain_key as string), () => [] as string[]);
+  const other = foreignChain(known, chainKey);
+  if (other) {
+    console.error(`REFUSING TO INDEX: this node is chain ${chainKey}, but the database already holds ${other.join(", ")}. ` +
+      "Events are not stored per chain, so mixing chains corrupts data. Check WS_URL, or use a fresh database if the network was reset.");
+    process.exit(1);
+  }
   // Heavy housekeeping runs a few minutes after start, one task at a time, so a burst of requests
   // cannot get the connection dropped by the node. Set HOUSEKEEPING=off to disable it.
   let housekeeping = false;
@@ -311,6 +321,11 @@ async function main() {
     running = true;
     try {
       const target = header.number.toNumber();
+      // The endpoint switched to a different chain while we were running: restart so the chain is identified again.
+      if (nodeFarBehind(target, next)) {
+        console.error(`Node head ${target} is far behind block ${next}: the endpoint changed chain. Exiting so the supervisor restarts and re-checks it.`);
+        process.exit(1);
+      }
       while (next <= target) {
         try {
           await processBlock(api, chainKey, next, typed);

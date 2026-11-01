@@ -8,7 +8,7 @@ Pindex indexes the Portaldot V3 testnet and serves it as a REST API and a search
 
 It reads runtime metadata and auto-generates Postgres tables, a REST API, and a GraphQL API for any pallet's events with **zero per-pallet handler code**.
 
-**Search any address. See token holders & NFT owners. Or paste a contract address + ABI to get a public endpoint for its decoded events.**
+**Search any address (native `5…` or EVM `0x…`), EVM transaction hash or block. See token holders & NFT owners. Or paste a contract address + ABI to get a public endpoint for its decoded events.**
 
 ## Links
 - **App**: https://pindex.onrender.com/app/
@@ -21,7 +21,7 @@ It reads runtime metadata and auto-generates Postgres tables, a REST API, and a 
 ---
 
 ### The Problem
-Portaldot V3 has no EVM transaction explorer yet. The node console only opens block numbers, and the organizers confirmed a dedicated explorer is still to come. So every builder who needs to verify a transaction, or who needs token holders, NFT owners or decoded contract events, ends up writing the same block scraper.
+Portaldot V3 has no EVM transaction explorer yet. The node console only opens block numbers, and the organizers confirmed a dedicated explorer is still to come. In addition, every builder who needs to verify a transaction, or who needs token holders, NFT owners or decoded contract events, ends up writing the same block scraper.
 
 Pindex does that work **once** for the entire ecosystem and exposes it as a free, public, production-ready API.
 

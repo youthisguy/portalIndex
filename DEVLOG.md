@@ -73,3 +73,12 @@
 - Tests: 42 unit tests pass, including 4 new ones for transaction hashing (EIP-1559, legacy, contract creation, undecodable payload).
 - Limits: only EVM transactions are searchable. Native extrinsic hashes (for example a plain transfer) are not stored. Each new block with transactions costs one extra node call.
 - Next: create the table on the hosted database, backfill with `scripts/backfill-txs.ts` (checkpoint block first), deploy, then add "Search by EVM transaction hash" to the README Status list and the deployment transaction to the Evidence section.
+
+
+## 2026-11-01
+- Incident: indexing stopped on 2026-10-31 and the home page jumped from block ~265,000 to 877,858. The hosted `indexer_cursor` held two chains: the Portaldot V3 testnet (`0xd4f9acbc…`, last block 265,321, last write 14:55 UTC) and a different chain (`0x6e7f1f24…`, block 877,858, last write 17:23 UTC) with the same runtime and 6 s blocks. The home page read the first cursor row, so it showed the other chain. The testnet node had been down and was repaired that day; the endpoint most likely served another network (probably mainnet) while it was being fixed.  
+- Why it stalled: the running ingester picked the wrong chain and never rechecks it. When the endpoint went back to the testnet it kept waiting for block 877,859 on a chain at ~275,000, so it looked healthy and wrote nothing. This is inferred from the cursors and the absence of new gaps; the Render service logs have not been checked yet.
+- Why it mixed data: `events` and the typed tables are not stored per chain, so the other chain's rows landed beside the testnet's, balances for shared accounts could be overwritten, and registered contract decoders advanced to 877,858.
+- Fixes in `src/ingest.ts`: it refuses to start if the node's genesis hash is not the chain already in the database (`src/chain-guard.ts`); it exits and restarts if the node's head falls more than 1,000 blocks behind the next block to index, so a chain switch while running is noticed; and `entriesPaged` now passes `args: []`, which fixes the hourly `native balance sync skipped: opts.args is not iterable` (probably from the regenerated lockfile upgrading `@polkadot/api`).
+- Cleanup: `scripts/purge-foreign-chain.sql` removes every row above block 500,000, the other chain's balances and cursor, and clamps contract decoders back to the testnet cursor. Tested on an in-memory Postgres with rows from both chains. `scripts/head-check.ts` shows which chain an endpoint really is.
+
