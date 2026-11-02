@@ -289,7 +289,7 @@ section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--i
     </details>
 
     <div class="limits" style="margin-top:20px">
-      <p style="margin:0"><b>Good to know.</b> History starts at the first block Pindex indexed, shown as <code class="k">indexed_from_block</code> on your contract page. Large numbers arrive as strings. Indexed strings, bytes and arrays appear as a hash, as they do on any EVM chain. Event data is public, so the URL is a convenience link, not a secret.</p>
+      <p style="margin:0"><b>Good to know.</b>Large numbers arrive as strings. Indexed strings, bytes and arrays appear as a hash, as they do on any EVM chain. Event data is public, so the URL is a convenience link, not a secret.</p>
     </div>
   </section>
 
@@ -320,13 +320,16 @@ section h2{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--i
   </section>
 
   <section id="checkpoint" aria-labelledby="cp-h">
-    <h2 id="cp-h">Check our work: the on-chain checkpoint</h2>
+    <h2 id="cp-h">Verify the index</h2>
     <p class="muted" style="max-width:40em">Every 1,000 blocks, Pindex anchors one 32-byte hash of everything it has stored, and of every range it could not read, to a contract on the testnet. Anyone can recompute it from the public API and compare, so the index cannot be quietly changed after the fact.</p>
     <div class="panel">
       <div class="kv" id="cp-kv"><span class="k">Status</span><code>Loading…</code><span></span></div>
-      <p class="muted" style="font-size:.9rem;margin:0 0 10px">Verify the latest checkpoint yourself:</p>
-      <pre>npx tsx scripts/verify-checkpoint.ts</pre>
-      <p class="muted" style="font-size:.85rem;margin:0">It proves the stored data has not changed since it was anchored and that the stated gaps are the real ones. It does not prove the data matches the chain. <a href="https://github.com/youthisguy/portalIndex/blob/main/docs/checkpoints.md">How it works</a></p>
+      <div class="row" style="margin-top:4px">
+        <button class="btn primary" type="button" id="cp-verify">Verify</button>
+        <span class="muted" style="font-size:.88rem">Recomputes the hash from the stored data and compares it with the latest checkpoint.</span>
+      </div>
+      <div class="msg" id="cp-result" role="status" aria-live="polite"></div>
+      <p class="muted" style="font-size:.85rem;margin:14px 0 0">It proves the stored data has not changed since it was anchored and that the stated gaps are the real ones. <a href="https://github.com/youthisguy/portalIndex/blob/main/docs/checkpoints.md">How it works</a></p>
     </div>
   </section>
 
@@ -446,7 +449,7 @@ async function loadCheckpoint() {
     const rows = await fetch(API + q).then((r) => r.ok ? r.json() : Promise.reject());
     kv.textContent = "";
     if (!rows.length) {
-      row("Status", "No checkpoint published yet. The publisher is in testing and will anchor one at the next multiple of 1,000 blocks.");
+      row("Status", "No checkpoint published yet.");
       row("Contract", CP_CONTRACT, CP_CONTRACT);
       return;
     }
@@ -471,6 +474,28 @@ async function loadCheckpoint() {
   }
 }
 loadCheckpoint(); setInterval(loadCheckpoint, 60000);
+
+$("cp-verify").onclick = async () => {
+  const btn = $("cp-verify"), out = $("cp-result");
+  btn.disabled = true; btn.textContent = "Checking…";
+  say(out, "Recomputing the hash from every stored event. This can take a few seconds.");
+  try {
+    const r = await fetch(API + "/checkpoint/verify");
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return say(out, d.error || `Check failed (HTTP ${r.status}).`, "err");
+    const meta = ` (${fmt(d.steps ?? 0)} steps, ${d.ms} ms${d.cached ? ", cached result" : ""})`;
+    if (d.status === "match")
+      say(out, `Match. The hash recomputed from stored data equals the on-chain checkpoint at block ${fmt(d.block)}.${meta}`, "ok");
+    else if (d.status === "mismatch")
+      say(out, `Mismatch at block ${fmt(d.block)}. On-chain: ${d.onchain}. Computed: ${d.computed}.`, "err");
+    else
+      say(out, d.note || "No result yet.");
+  } catch {
+    say(out, "Could not reach the API. Try again shortly.", "err");
+  } finally {
+    btn.disabled = false; btn.textContent = "Verify now";
+  }
+};
 
 /* ---- console loop ---- */
 (() => {

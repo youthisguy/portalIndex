@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "crypto";
 import pg from "pg";
 import type { Interface } from "ethers";
 import { buildInterface, decodeLog, eventsOnly } from "./decode.js";
+import { makeVerifier, sendVerify } from "./checkpoint-verify.js";
 
 const PORT = Number(process.env.PORT ?? 10000);
 const UP = new URL(process.env.POSTGREST_URL ?? "http://127.0.0.1:3000");
@@ -17,6 +18,7 @@ const PER_IP_PER_DAY = Number(process.env.REG_PER_IP_PER_DAY ?? 20);
 const WINDOW = 2000; // blocks decoded per step
 
 const pool = new pg.Pool({ connectionString: DB, max: 3 });
+const verifyCheckpoint = makeVerifier(async (text, params) => (await pool.query(text, params as any[])).rows);
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 
 const CORS = {
@@ -295,6 +297,9 @@ const server = http.createServer(async (req, res) => {
       p.on("error", (e: any) => { if (!res.headersSent) send(res, 502, { error: "lookup unavailable, try again shortly", detail: e?.code ?? String(e?.message ?? e).slice(0, 60) }); });
       return;
     }
+
+    if (seg[0] === "checkpoint" && seg[1] === "verify" && seg.length === 2 && req.method === "GET")
+      return await sendVerify(verifyCheckpoint, res);
 
     if (seg[0] === "contracts" && seg.length === 1) {
       if (req.method === "POST") return await register(req, res);

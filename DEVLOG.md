@@ -84,3 +84,8 @@
   - `entriesPaged` now always passes `args: []`, fixing the hourly native-balance sync error (`opts.args is not iterable`).
 - Cleanup: `scripts/purge-foreign-chain.sql` deletes every row with `block_number > 500000`, removes the foreign cursor and balances, and resets contract `decoded_to` to 265321. Ran successfully on the hosted database (621 events removed). Indexer restarted cleanly and is catching up from its own cursor. 
 
+## 2026-11-02
+- Checkpoint verification is now a server request. GET /checkpoint/verify recomputes the state hash from stored events and gaps, compares it with the latest on-chain checkpoint, and returns match, mismatch, none or waiting (a skipped block is still unfilled).
+- Results are cached per checkpoint for 10 minutes and concurrent calls share one run, since a full recompute reads every stored event. No private key needed.
+- Home page: the CLI instruction is replaced by a "Verify now" button with an inline result; 
+ 

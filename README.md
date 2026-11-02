@@ -247,7 +247,7 @@ A second command checks the running API's response shapes, including that the ch
     npm run test:live                                  # hosted API
     API=http://localhost:10000 npm run test:live       # your local registry
 
-The live checkpoint test passes only on a database that has indexed block 135953.
+The live checkpoint test passes only on a database that has indexed block 281121.
 
 ## Hosted testnet endpoint
 A read-only REST API for the Portaldot V3 testnet is hosted at
@@ -297,19 +297,19 @@ Each step below uses the public API and needs only `curl`.
 
     curl "https://portalindex-98f0.onrender.com/indexer_cursor"
 
-**2. Pindex indexed the checkpoint contract's own deployment** (block 135953, deployer and contract as in the table above):
+**2. Pindex indexed the checkpoint contract's own deployment** (block 281121, deployer and contract as in the table above). Addresses are stored lowercase, so query in lowercase:
 
-    curl "https://portalindex-98f0.onrender.com/revive_instantiated?contract=eq.0x4DF57190DEbe09D922D1AfE9458AfF439bcd2Cb1"
+    curl "https://portalindex-98f0.onrender.com/revive_instantiated?contract=eq.0x4df57190debe09d922d1afe9458aff439bcd2cb1"
 
-Returned on 2026-10-27:
+Returned on 2026-11-02:
 
-    [{"block_number":135953,"event_index":9,"block_hash":"0xd62ea2faca0be6fb4eaa46b9310f1c32df9e52d90ec2309030ff25fb7431ab46","extrinsic_index":1,"block_time":"2026-10-21T19:43:54+00:00","deployer":"0x378598779d64d4c0ee191dbb98a487535e2b7048","contract":"0x6a5cce928e49c5062acd7aa876335a8041c7adc9"}]
+    [{"block_number":281121,"event_index":7,"block_hash":"0x224d0c2eae35f05f0f5c0c965c5933e6188b89832caaf52883872556b3b01737","extrinsic_index":1,"block_time":"2026-11-01T18:43:42+00:00","deployer":"0x378598779d64d4c0ee191dbb98a487535e2b7048","contract":"0x4df57190debe09d922d1afe9458aff439bcd2cb1"}]
 
-**3. Decode the checkpoint contract's events with the registry.** The constructor emits `OwnershipTransferred(address(0), deployer)`, so a fresh registration should show exactly one such event at block 135953:
+**3. Decode the checkpoint contract's events with the registry.** The constructor emits `OwnershipTransferred(address(0), deployer)`, so a fresh registration should show that event at block 281121, followed by one `Checkpoint` event per automatic checkpoint:
 
     curl -X POST https://portalindex-98f0.onrender.com/contracts \
       -H "content-type: application/json" \
-      -d '{"name":"checkpoint","address":"0x6a5cce928e49c5062acd7aa876335a8041c7adc9","abi":[
+      -d '{"name":"checkpoint","address":"0x4df57190debe09d922d1afe9458aff439bcd2cb1","abi":[
         {"type":"event","name":"Checkpoint","anonymous":false,"inputs":[
           {"name":"blockNumber","type":"uint256","indexed":true},
           {"name":"stateHash","type":"bytes32","indexed":false},
@@ -329,10 +329,9 @@ Expected `args` for that event (addresses use checksum case):
 
     curl "https://portalindex-98f0.onrender.com/indexer_gaps"
 
-**5. Search an EVM transaction by its hash.** The deployment transaction of the checkpoint contract, and a later `publish` call to it (block 254845, one `Checkpoint` event):
+**5. Search an EVM transaction by its hash.** The deployment transaction of the checkpoint contract:
 
-    curl "https://portalindex-98f0.onrender.com/evm_transactions?tx_hash=eq.0xe898bbfd69f401b28ec0769fdc8b7dbadf5e3f8a2cfb9bf7cb71215a3392be32"
-    curl "https://portalindex-98f0.onrender.com/evm_transactions?tx_hash=eq.0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609"
+    curl "https://portalindex-98f0.onrender.com/evm_transactions?tx_hash=eq.0xea1741d8b71ed0a0513af584526b5df8adb380261149de2e80b2e0c84d9c64c0"
 
 The hash is the same one the chain's EVM RPC reports (`eth_getTransactionByHash`) and that wallets show. Open it in the app: https://pindex.onrender.com/app/?q=0x4ac0c4532e20c70b563a112f03c616e9cbef93e78f22478f6f12c25098a02609
 
