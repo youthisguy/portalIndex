@@ -299,7 +299,7 @@ Each step below uses the public API and needs only `curl`.
 
 **2. Pindex indexed the checkpoint contract's own deployment** (block 135953, deployer and contract as in the table above):
 
-    curl "https://portalindex-98f0.onrender.com/revive_instantiated?contract=eq.0x6a5cce928e49c5062acd7aa876335a8041c7adc9"
+    curl "https://portalindex-98f0.onrender.com/revive_instantiated?contract=eq.0x4DF57190DEbe09D922D1AfE9458AfF439bcd2Cb1"
 
 Returned on 2026-10-27:
 

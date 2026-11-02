@@ -40,7 +40,7 @@ CP_PID=""
 if [ -n "${CHECKPOINT_PRIVATE_KEY:-}" ]; then
   (
     while true; do
-      npx tsx src/checkpoint.ts
+      npx tsx src/checkpointer.ts
       echo "checkpoint worker exited; restarting in 60s"
       sleep 60
     done

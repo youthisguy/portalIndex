@@ -46,7 +46,7 @@ publication emits `Checkpoint(blockNumber, stateHash, publisher, timestamp)`.
 
 ## Run the publisher
 
-The worker is `src/checkpoint.ts`. It runs next to the indexer and only starts when `CHECKPOINT_PRIVATE_KEY` is set.
+The worker is `src/checkpointer.ts`. It runs next to the indexer and only starts when `CHECKPOINT_PRIVATE_KEY` is set.
 
 | Variable | Default | Meaning |
 |---|---|---|

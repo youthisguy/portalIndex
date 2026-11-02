@@ -1,6 +1,6 @@
 // Publishes the rolling state hash to PortalIndexCheckpoint on a schedule. See docs/checkpoints.md.
-//   npx tsx src/checkpoint.ts            run forever
-//   npx tsx src/checkpoint.ts --once     one attempt, then exit
+//   npx tsx src/checkpointer.ts            run forever
+//   npx tsx src/checkpointer.ts --once     one attempt, then exit
 // Needs CHECKPOINT_PRIVATE_KEY (the contract owner's key) unless CHECKPOINT_DRY_RUN=1.
 import pg from "pg";
 import { Contract, JsonRpcProvider, Network, Wallet } from "ethers";
