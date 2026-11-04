@@ -271,7 +271,7 @@ DELETE /c/<slug>             (Bearer manage_token)
 History starts at the first block Pindex indexed (`indexed_from_block` on the contract page). Only events are decoded, and only Solidity ABIs.
 
 ## Checkpoint contract (deployed)
-`contracts/PortalIndexCheckpoint.sol` stores `(blockNumber, stateHash)` pairs published by its owner, and lets anyone verify a hash against the anchored one.
+`contracts/PortalIndexCheckpoint.sol` stores `(blockNumber, stateHash)` pairs, automatically publishing checkpoints every 1,000 blocks to anchor chain history trustlessly on-chain, while letting anyone verify a hash against the anchored one.
 
 |                   |                                               |
 | ----------------- | --------------------------------------------- |
@@ -280,8 +280,6 @@ History starts at the first block Pindex indexed (`indexed_from_block` on the co
 | Deployed at block | 281,121                                        |
 | Deployer          | `0x378598779d64d4c0ee191dbb98a487535e2b7048`  |
 | Deployment tx     | [`0xea1741d8b71ed0a0513af584526b5df8adb380261149de2e80b2e0c84d9c64c0`](https://pindex.onrender.com/app/?q=0xea1741d8b71ed0a0513af584526b5df8adb380261149de2e80b2e0c84d9c64c0) |
-
-Publishing a checkpoint is a manual call for now. Automatic state-hash publishing is planned.
 
 ## Evidence: verify it yourself
 Each step below uses the public API and needs only `curl`.
