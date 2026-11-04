@@ -178,15 +178,8 @@ Working:
 - Contract registry: register an address and a Solidity ABI from the home page or the API, read decoded events from a public URL
 - Hosted REST API on Render (read-only data, plus contract registration), with the ingester in the same container
 - H160 <-> native account mapping check via `reviveApi`
-- Checkpoint contract deployed on the V3 testnet (`contracts/PortalIndexCheckpoint.sol`)
+- Automated state checkpointing: The checkpoint contract (0x4DF57190DEbe09D922D1AfE9458AfF439bcd2Cb1) automatically records state hashes every 1,000 blocks, anchoring chain history trustlessly on-chain.
 - Automated tests (`npm test`)
-
-Planned:
-- Per-era staking snapshots from chain storage
-- Automatic rolling state hash anchored on-chain by the checkpoint contract
-- ink! (Contracts pallet) metadata decoding
-- `pindex init` one-command setup
-- Hosted paid tier (see Commercial path)
 
 ## Quick start
 Requires Node 20+ and Docker.
